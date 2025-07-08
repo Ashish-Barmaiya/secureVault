@@ -1,0 +1,184 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  passwordHash     String
+  twoFactorSecret  String? // For TOTP (2FA)
+  twoFactorEnabled Boolean  @default(false)
+  vaultCreated     Boolean  @default(false)
+  name             String?
+  googleId         String?  @unique // For Google Sign-In
+  lastLogin        DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  inactivityPeriod Int      @default(180) // Days before alerting heirs
+
+  // Relations
+  heirs             Heir[]
+  digitalAssets     DigitalAsset[]
+  deathVerification DeathVerification[]
+  activityLogs      ActivityLog[]
+}
+
+model Heir {
+  id           String      @id @default(uuid())
+  name         String
+  email        String
+  relationship String // "Spouse", "Child", etc.
+  accessLevel  AccessLevel @default(VIEWER)
+  isVerified   Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+
+  // Relations
+  user         User                   @relation(fields: [userId], references: [id])
+  userId       String
+  verification VerificationDocument[]
+}
+
+enum AccessLevel {
+  VIEWER // Can view assets
+  EXECUTOR // Can transfer assets
+}
+
+model VerificationDocument {
+  id         String    @id @default(uuid())
+  type       DocType
+  s3Key      String
+  verifiedAt DateTime?
+  verifiedBy String?
+
+  // Relations
+  heir                Heir?              @relation(fields: [heirId], references: [id])
+  heirId              String?
+  deathVerification   DeathVerification? @relation("DeathVerificationDocuments", fields: [deathVerificationId], references: [id]) // Added back-relation
+  deathVerificationId String? // New field for relation
+}
+
+enum DocType {
+  DEATH_CERTIFICATE
+  HEIR_ID
+  RELATIONSHIP_PROOF
+}
+
+model DigitalAsset {
+  id        String    @id @default(uuid())
+  type      AssetType
+  title     String // "Primary SBI Account", "MetaMask Wallet", etc.
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+
+  // 1:N Relationships (One DigitalAsset parent per sub-asset)
+  bankAccounts        BankAccount[]
+  cryptoWallets       CryptoWallet[]
+  socialMediaAccounts SocialMediaAccount[]
+  nfts                NFT[]
+
+  @@index([userId, type])
+}
+
+enum AssetType {
+  BANK_ACCOUNT
+  CRYPTO_WALLET
+  NFT
+  SOCAIAL_MEDIA_ACCOUNT
+}
+
+// Sub-models (allowing duplicates under one DigitalAsset)
+model BankAccount {
+  id            String       @id @default(uuid())
+  encryptedData String // { accountNumber, ifsc, login, password }
+  metadata      Json? // { bankName: "SBI", branch: "Mumbai" }
+  asset         DigitalAsset @relation(fields: [assetId], references: [id])
+  assetId       String // Not unique! One DigitalAsset can group multiple accounts
+
+  @@index([assetId])
+}
+
+model CryptoWallet {
+  id            String       @id @default(uuid())
+  encryptedData String // { privateKey, seedPhrase }
+  publicAddress String // Non-encrypted (0x...)
+  network       String // "Ethereum", "Polygon", etc.
+  asset         DigitalAsset @relation(fields: [assetId], references: [id])
+  assetId       String // Not unique!
+
+  @@index([assetId, network])
+}
+
+model NFT {
+  id              String       @id @default(uuid())
+  tokenId         String // Non-encrypted
+  contractAddress String // Non-encrypted
+  encryptedData   String // { walletAccessNotes }
+  metadataUrl     String? // IPFS/OpenSea link
+  asset           DigitalAsset @relation(fields: [assetId], references: [id])
+  assetId         String // Not unique!
+
+  @@index([assetId, contractAddress])
+}
+
+// Social Media (unchanged, already 1:N)
+model SocialMediaAccount {
+  id            String       @id @default(uuid())
+  platform      String // "Twitter", "Facebook"
+  encryptedData String // { username, password }
+  asset         DigitalAsset @relation(fields: [assetId], references: [id])
+  assetId       String // Not unique!
+
+  @@index([assetId, platform])
+}
+
+model ActivityLog {
+  id        String     @id @default(uuid())
+  action    ActionType
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime   @default(now())
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+}
+
+enum ActionType {
+  ACCOUNT_CREATED
+  TWO_FACTOR_AUTHENTICATION_ENABLED
+  ASSET_ADDED
+  ASSET_DELETED
+  HEIR_ADDED
+  DEATH_VERIFICATION_REQUESTED
+}
+
+model DeathVerification {
+  id         String             @id @default(uuid())
+  status     VerificationStatus @default(PENDING)
+  reason     String?
+  verifiedAt DateTime?
+  verifiedBy String?
+
+  // Relations
+  user      User                   @relation(fields: [userId], references: [id])
+  userId    String
+  documents VerificationDocument[] @relation("DeathVerificationDocuments") // Named relation
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
