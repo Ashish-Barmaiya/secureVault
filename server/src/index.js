@@ -50,8 +50,9 @@ db.connect()
 // Import routes
 import homeRouter from "./routes/home.router.js";
 import authRouter from "./routes/auth.router.js";
+import vaultRouter from "./routes/vault.router.js";
 
 // Use routes
 app.use("/", homeRouter);
-
 app.use("/auth", authRouter);
+app.use("/dashboard/vault", vaultRouter);

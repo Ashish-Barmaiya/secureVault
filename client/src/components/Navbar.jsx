@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { Vault } from "lucide-react";
@@ -65,12 +66,15 @@ export default function Navbar() {
 
   return (
     <header className="w-full flex justify-between items-center px-6 py-3 bg-white/80 backdrop-blur-md shadow-sm">
-      <div className="flex items-center gap-2">
+      <Link
+        href="/"
+        className="flex items-center gap-2 hover:opacity-80 transition"
+      >
         <Vault className="h-8 w-8 text-blue-600" />
         <div className="text-2xl font-bold text-slate-700">
           Secure<span className="text-blue-600">Vault</span>
         </div>
-      </div>
+      </Link>
 
       <div className="flex gap-4 items-center">
         {user ? (

@@ -7,6 +7,7 @@ import { Vault } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { logout } from "@/store/userSlice";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function DashboardNavbar() {
   const user = useSelector((state) => state.user.user);
@@ -35,12 +36,15 @@ export default function DashboardNavbar() {
   return (
     <nav className="w-full flex items-center justify-between px-6 py-4 bg-white backdrop-blur-md shadow-sm">
       {/* Left: Logo */}
-      <div className="flex items-center gap-2">
+      <Link
+        href="/"
+        className="flex items-center gap-2 hover:opacity-80 transition"
+      >
         <Vault className="h-8 w-8 text-blue-600" />
         <div className="text-2xl font-bold text-slate-700">
           Secure<span className="text-blue-600">Vault</span>
         </div>
-      </div>
+      </Link>
 
       {/* Right: Icons */}
       <div className="flex items-center gap-6">

@@ -17,21 +17,36 @@ model User {
   id               String   @id @default(uuid())
   email            String   @unique
   passwordHash     String
-  twoFactorSecret  String? // For TOTP (2FA)
+  twoFactorSecret  String?
   twoFactorEnabled Boolean  @default(false)
   vaultCreated     Boolean  @default(false)
   name             String?
-  googleId         String?  @unique // For Google Sign-In
+  googleId         String?  @unique
   lastLogin        DateTime @default(now())
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  inactivityPeriod Int      @default(180) // Days before alerting heirs
+  inactivityPeriod Int      @default(180)
 
   // Relations
+  vault             Vault?
   heirs             Heir[]
-  digitalAssets     DigitalAsset[]
   deathVerification DeathVerification[]
   activityLogs      ActivityLog[]
+  DigitalAsset      DigitalAsset[]
+}
+
+model Vault {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  encryptedVaultKey    String // Server-encrypted (from user-encrypted vault key
+  encryptedRecoveryKey String // Server-encrypted (from user-encrypted vault key using recovery key)
+  salt                 String // From PBKDF2 used with master password
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  user          User           @relation(fields: [userId], references: [id])
+  digitalAssets DigitalAsset[]
 }
 
 model Heir {
@@ -77,9 +92,9 @@ enum DocType {
 model DigitalAsset {
   id        String    @id @default(uuid())
   type      AssetType
-  title     String // "Primary SBI Account", "MetaMask Wallet", etc.
-  userId    String
-  user      User      @relation(fields: [userId], references: [id])
+  title     String
+  vaultId   String
+  vault     Vault     @relation(fields: [vaultId], references: [id])
   createdAt DateTime  @default(now())
 
   // 1:N Relationships (One DigitalAsset parent per sub-asset)
@@ -87,8 +102,10 @@ model DigitalAsset {
   cryptoWallets       CryptoWallet[]
   socialMediaAccounts SocialMediaAccount[]
   nfts                NFT[]
+  User                User?                @relation(fields: [userId], references: [id])
+  userId              String?
 
-  @@index([userId, type])
+  @@index([vaultId, type])
 }
 
 enum AssetType {
@@ -158,6 +175,7 @@ model ActivityLog {
 enum ActionType {
   ACCOUNT_CREATED
   TWO_FACTOR_AUTHENTICATION_ENABLED
+  VAULT_CREATED
   ASSET_ADDED
   ASSET_DELETED
   HEIR_ADDED

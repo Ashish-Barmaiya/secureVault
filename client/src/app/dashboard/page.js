@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Lock, Vault, Users, Plus, Scan } from "lucide-react";
 import DashboardNavbar from "@/components/DashboardNavbar";
+import CreateVaultButton from "@/components/CreateVaultButton";
 
 export default function DashboardPage() {
   const user = useSelector((state) => state.user.user);
@@ -50,19 +51,7 @@ export default function DashboardPage() {
             icon={<Lock className="text-green-600" />}
           />
         </div>
-        {!user?.vaultCreated && (
-          <div className="mt-4 flex justify-center">
-            <button
-              className="px-8 py-4 bg-gradient-to-r from-teal-700 to-blue-700 text-white text-lg font-semibold rounded-xl shadow-md hover:bg-blue-800 transition-all duration-200"
-              onClick={() => {
-                // You can add the vault creation POST logic later
-                console.log("Vault creation request goes here");
-              }}
-            >
-              🚀 Create Your Secure Vault
-            </button>
-          </div>
-        )}
+        {!user?.vaultCreated && <CreateVaultButton />}
 
         {/* Quick Actions */}
         <div className="bg-gradient-to-r from-teal-500 to-blue-600 text-white px-5 py-6 rounded shadow-sm">
