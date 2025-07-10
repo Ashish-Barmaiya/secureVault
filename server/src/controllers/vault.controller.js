@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { encryptVaultKey } from "../utils/encryptVaultKey.js";
+import { encryptVaultKey, decryptVaultKey } from "../utils/encryptVaultKey.js";
 import { logActivity } from "../utils/logActivity.js";
 
 const prisma = new PrismaClient();
@@ -85,4 +85,48 @@ const createVault = async (req, res) => {
   }
 };
 
-export { createVault };
+const unlockVault = async (req, res) => {
+  try {
+    // get user from request
+    const userId = req.user.id;
+
+    // check if user exists
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
+    // check if user has a vault
+    const vault = await prisma.vault.findUnique({ where: { userId } });
+    if (!vault) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Vault not found for this user" });
+    }
+
+    // decrypt vault key
+    const { ciphertext, iv } = JSON.parse(vault.encryptedVaultKey);
+    const decryptedVaultKey = decryptVaultKey(ciphertext, iv);
+
+    // return success response with vault data
+    console.log("Vault unlocked successfully", decryptedVaultKey);
+    return res.status(200).json({
+      success: true,
+      message: "Vault unlocked successfully",
+      vault: {
+        encryptedVaultKey: decryptedVaultKey,
+        salt: vault.salt,
+      },
+    });
+  } catch (error) {
+    console.error("error unlocking vault", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+export { createVault, unlockVault };

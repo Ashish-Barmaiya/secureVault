@@ -8,6 +8,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { logout } from "@/store/userSlice";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { clearVaultKey } from "@/store/vaultSlice";
 
 export default function DashboardNavbar() {
   const user = useSelector((state) => state.user.user);
@@ -23,6 +24,7 @@ export default function DashboardNavbar() {
       if (res.ok) {
         dispatch(logout());
         persistor.purge();
+        dispatch(clearVaultKey());
         router.push("/");
       } else {
         alert("Logout failed");
