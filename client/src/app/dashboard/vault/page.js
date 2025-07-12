@@ -1,9 +1,13 @@
+// app/dashboard/vault/page.js
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { clearVaultKey } from "@/store/vaultSlice";
 import { useRouter } from "next/navigation";
+import { encryptAssetData } from "@/utils/vaultCrypto";
+import AddAssetButton from "@/components/AddAssetButton";
 import {
   Vault,
   Eye,
@@ -57,11 +61,55 @@ export default function VaultDashboard() {
   const router = useRouter();
   const [showSidebar, setShowSidebar] = useState(false);
 
+  // Rendetr page only if vaultKey is available
   useEffect(() => {
     if (!vaultKey) {
       router.replace("/dashboard");
     }
   }, [vaultKey, router]);
+
+  // Function to handle submission of crypto wallet data
+  const handleSubmitCryptoWallet = async (walletData) => {
+    try {
+      // Encrypt the sensitive wallet data
+      const encryptedData = encryptAssetData(
+        walletData.secretInfo, // Only encrypt the sensitive parts
+        vaultKey // This should be your current vault key
+      );
+
+      // Prepare the data for API submission
+      const payload = {
+        title: walletData.title,
+        publicAddress: walletData.publicAddress,
+        network: walletData.network,
+        type: "crypto_wallet", // Add asset type for backend
+        encryptedData: encryptedData,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Send to API endpoint
+      const response = await fetch(
+        "/api/dashboard/vault/asset/add-crypto-wallet",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to save wallet");
+      }
+
+      const result = await response.json();
+      console.log("Wallet saved successfully:", result);
+    } catch (error) {
+      console.error("Error saving wallet:", error);
+      // Handle error (e.g., show notification to user)
+    }
+  };
 
   const handleLockVault = () => {
     dispatch(clearVaultKey());
@@ -95,10 +143,7 @@ export default function VaultDashboard() {
             Back to Dashboard
           </button>
 
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow text-sm">
-            <Plus size={16} />
-            Add New Asset
-          </button>
+          <AddAssetButton onSubmitCryptoWallet={handleSubmitCryptoWallet} />
 
           <button
             onClick={handleLockVault}
