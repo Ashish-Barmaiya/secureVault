@@ -86,3 +86,22 @@ export function decryptVaultKey(encryptedData, decryptionKey) {
     return null;
   }
 }
+
+// Serialize, encrypt, and return Base64 string
+export function encryptAssetData(dataObj, key) {
+  const json = JSON.stringify(dataObj);
+  const encrypted = CryptoJS.AES.encrypt(json, key).toString();
+  return encrypted;
+}
+
+// Decrypt Base64 string and return JS object
+export function decryptAssetData(ciphertext, key) {
+  try {
+    const bytes = CryptoJS.AES.decrypt(ciphertext, key);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    return JSON.parse(decrypted);
+  } catch (error) {
+    console.error("Decryption error:", error);
+    return null;
+  }
+}

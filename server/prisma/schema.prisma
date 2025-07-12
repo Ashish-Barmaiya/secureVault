@@ -112,7 +112,7 @@ enum AssetType {
   BANK_ACCOUNT
   CRYPTO_WALLET
   NFT
-  SOCAIAL_MEDIA_ACCOUNT
+  SOCIAL_MEDIA_ACCOUNT
 }
 
 // Sub-models (allowing duplicates under one DigitalAsset)
@@ -127,12 +127,15 @@ model BankAccount {
 }
 
 model CryptoWallet {
-  id            String       @id @default(uuid())
-  encryptedData String // { privateKey, seedPhrase }
-  publicAddress String // Non-encrypted (0x...)
-  network       String // "Ethereum", "Polygon", etc.
-  asset         DigitalAsset @relation(fields: [assetId], references: [id])
-  assetId       String // Not unique!
+  id                String       @id @default(uuid())
+  encryptedData     String // JSON.stringify({ privateKey, seedPhrase, ... }), encrypted with vaultKey
+  publicAddress     String // e.g., "0x123..."
+  network           String // e.g., "Ethereum", "Polygon"
+  walletType        String? // e.g., "MetaMask", "Ledger", optional
+  label             String? // e.g., "My ETH Wallet", optional
+  encryptionVersion Int          @default(1) // for future-proofing decryption
+  assetId           String
+  asset             DigitalAsset @relation(fields: [assetId], references: [id])
 
   @@index([assetId, network])
 }

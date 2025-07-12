@@ -47,7 +47,7 @@ const createVault = async (req, res) => {
     const serverEncryptedRecoveryKey = encryptVaultKey(encryptedRecoveryKey);
 
     // create vault
-    const vault = await prisma.vault.create({
+    await prisma.vault.create({
       data: {
         userId,
         encryptedVaultKey: JSON.stringify({ ciphertext, iv }),
@@ -60,6 +60,7 @@ const createVault = async (req, res) => {
     await prisma.user.update({
       where: { id: userId },
       data: { vaultCreated: true },
+      // TODO: there is no need to have this field. Delete it later OR keep this field and add a new field that keeps count of total vaults user has. (maybe useful for quick query)
     });
 
     // log activity
