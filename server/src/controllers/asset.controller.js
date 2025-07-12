@@ -84,4 +84,46 @@ const addCryptoWallet = async (req, res) => {
   }
 };
 
-export { addCryptoWallet };
+// Get Crypto Wallets
+const getCryptoWallets = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const vault = await prisma.vault.findUnique({ where: { userId } });
+    if (!vault) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Vault not found" });
+    }
+
+    const cryptoWallets = await prisma.cryptoWallet.findMany({
+      where: {
+        asset: {
+          vaultId: vault.id,
+        },
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Crypto wallets fetched successfully",
+      data: cryptoWallets,
+    });
+  } catch (error) {
+    console.error("Get Crypto Wallets Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+export { addCryptoWallet, getCryptoWallets };

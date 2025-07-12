@@ -99,9 +99,14 @@ export function decryptAssetData(ciphertext, key) {
   try {
     const bytes = CryptoJS.AES.decrypt(ciphertext, key);
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+
+    if (!decrypted) {
+      throw new Error("Decryption returned empty string. Likely wrong key.");
+    }
+
     return JSON.parse(decrypted);
   } catch (error) {
-    console.error("Decryption error:", error);
+    console.error("Decryption error:", error.message);
     return null;
   }
 }
