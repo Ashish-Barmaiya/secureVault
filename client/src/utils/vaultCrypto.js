@@ -87,26 +87,61 @@ export function decryptVaultKey(encryptedData, decryptionKey) {
   }
 }
 
-// Serialize, encrypt, and return Base64 string
-export function encryptAssetData(dataObj, key) {
-  const json = JSON.stringify(dataObj);
-  const encrypted = CryptoJS.AES.encrypt(json, key).toString();
-  return encrypted;
+// Helper to convert base64 to ArrayBuffer and vice versa
+function base64ToArrayBuffer(base64) {
+  return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
 }
 
-// Decrypt Base64 string and return JS object
-export function decryptAssetData(ciphertext, key) {
-  try {
-    const bytes = CryptoJS.AES.decrypt(ciphertext, key);
-    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+function arrayBufferToBase64(buffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
 
-    if (!decrypted) {
-      throw new Error("Decryption returned empty string. Likely wrong key.");
-    }
+// Turn vaultKey string into a CryptoKey
+export async function importKeyFromVaultKey(vaultKey) {
+  const keyBuffer = new TextEncoder().encode(vaultKey);
+  const hash = await crypto.subtle.digest("SHA-256", keyBuffer); // ensure 256-bit
+  return crypto.subtle.importKey("raw", hash, { name: "AES-GCM" }, false, [
+    "encrypt",
+    "decrypt",
+  ]);
+}
 
-    return JSON.parse(decrypted);
-  } catch (error) {
-    console.error("Decryption error:", error.message);
-    return null;
-  }
+// Encrypt function
+export async function encryptAssetData(plainText, vaultKey) {
+  console.log("🔐 Encrypting this:", plainText);
+
+  const key = await importKeyFromVaultKey(vaultKey);
+  const iv = crypto.getRandomValues(new Uint8Array(12)); // AES-GCM standard IV length
+
+  const encoded = new TextEncoder().encode(plainText);
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encoded
+  );
+
+  return {
+    ciphertext: arrayBufferToBase64(encrypted),
+    iv: arrayBufferToBase64(iv),
+  };
+}
+
+// Decrypt function
+export async function decryptAssetData({ ciphertext, iv }, vaultKey) {
+  const key = await importKeyFromVaultKey(vaultKey);
+
+  console.log("🔓 Decrypting with:", ciphertext, iv);
+
+  const decrypted = await crypto.subtle.decrypt(
+    {
+      name: "AES-GCM",
+      iv: base64ToArrayBuffer(iv),
+    },
+    key,
+    base64ToArrayBuffer(ciphertext)
+  );
+
+  console.log("📥 Raw decrypted buffer:", decrypted);
+
+  return new TextDecoder().decode(decrypted);
 }

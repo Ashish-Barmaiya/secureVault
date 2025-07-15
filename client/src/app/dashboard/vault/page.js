@@ -69,30 +69,29 @@ export default function VaultDashboard() {
   // Function to handle submission of crypto wallet data
   const handleSubmitCryptoWallet = async (walletData) => {
     try {
-      // Encrypt the sensitive wallet data
-      const encryptedData = encryptAssetData(
-        walletData.secretInfo, // Only encrypt the sensitive parts
-        vaultKey // This should be your current vault key
-      );
+      console.log("🔒 Wallet data to encrypt:", walletData.secretInfo);
+      const jsonToEncrypt = JSON.stringify(walletData.secretInfo);
+      console.log("📤 JSON stringified:", jsonToEncrypt);
 
-      // Prepare the data for API submission
+      const encryptedDataObj = await encryptAssetData(jsonToEncrypt, vaultKey);
+
+      // Combine ciphertext and iv into a single string for storage
+      const encryptedData = `${encryptedDataObj.ciphertext}:${encryptedDataObj.iv}`;
+
       const payload = {
         title: walletData.title,
         publicAddress: walletData.publicAddress,
         network: walletData.network,
-        type: "crypto_wallet", // Add asset type for backend
-        encryptedData: encryptedData,
+        type: "crypto_wallet",
+        encryptedData,
         createdAt: new Date().toISOString(),
       };
 
-      // Send to API endpoint
       const response = await fetch(
         "/api/dashboard/vault/asset/add-crypto-wallet",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
@@ -103,47 +102,67 @@ export default function VaultDashboard() {
 
       const result = await response.json();
       console.log("Wallet saved successfully:", result);
-      // Refresh wallets after adding
       fetchCryptoWallets();
     } catch (error) {
       console.error("Error saving wallet:", error);
-      // Handle error (e.g., show notification to user)
+      // Optional: Show user error toast
     }
   };
-
   const fetchCryptoWallets = async () => {
-    const res = await fetch("/api/dashboard/vault/asset/crypto-wallet");
-    if (!res.ok) {
-      console.error("Failed to fetch crypto wallets");
+    try {
+      const res = await fetch("/api/dashboard/vault/asset/crypto-wallet");
+      if (!res.ok) throw new Error("Failed to fetch crypto wallets");
+
+      const resJson = await res.json();
+      // Map server data to expected frontend structure
+      const wallets = (resJson?.data || []).map((wallet) => ({
+        id: wallet.id,
+        title: wallet.label || "Unnamed Wallet",
+        publicAddress: wallet.publicAddress,
+        network: wallet.network,
+        encryptedData: wallet.encryptedData, // Keep as colon-separated string
+        createdAt: wallet.createdAt || new Date().toISOString(),
+      }));
+
+      setCryptoWallets(wallets);
+    } catch (error) {
+      console.error("Error fetching wallets:", error);
     }
-    const resJson = await res.json();
-    const wallets = resJson?.data || [];
-    setCryptoWallets(wallets);
   };
 
   useEffect(() => {
     if (vaultKey) fetchCryptoWallets();
   }, [vaultKey]);
 
-  const handleDecrypt = async (walletId, encryptedData) => {
+  const handleDecrypt = async (walletId, encryptedDataString) => {
     setIsDecrypting((prev) => ({ ...prev, [walletId]: true }));
 
-    // Simulate decryption delay for UX
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const [ciphertext, iv] = encryptedDataString.split(":");
 
-    const decrypted = decryptAssetData(encryptedData, vaultKey);
-    if (decrypted) {
+      console.log("📦 Encrypted String:", encryptedDataString);
+      console.log("🔓 Ciphertext:", ciphertext);
+      console.log("🔓 IV:", iv);
+
+      const decryptedString = await decryptAssetData(
+        { ciphertext, iv },
+        vaultKey
+      );
+
+      console.log("✅ Decrypted String:", decryptedString);
+
+      const parsed = JSON.parse(decryptedString); // crashing here
+
       setDecryptedMap((prev) => ({
         ...prev,
-        [walletId]: decrypted,
+        [walletId]: parsed,
       }));
-    } else {
-      alert(
-        "Failed to decrypt data. Vault key may be wrong or data corrupted."
-      );
+    } catch (error) {
+      console.error("❌ Decryption error:", error);
+      alert("Failed to decrypt data.\n\n" + error.message);
+    } finally {
+      setIsDecrypting((prev) => ({ ...prev, [walletId]: false }));
     }
-
-    setIsDecrypting((prev) => ({ ...prev, [walletId]: false }));
   };
 
   const handleLockVault = () => {

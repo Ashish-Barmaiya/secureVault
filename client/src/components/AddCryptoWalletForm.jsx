@@ -38,8 +38,19 @@ export default function AddCryptoWalletForm({ open, onOpenChange, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+
     try {
-      await onSubmit(form);
+      const formattedData = {
+        title: form.title,
+        publicAddress: form.publicAddress,
+        network: form.network,
+        secretInfo: {
+          privateKey: form.privateKey,
+          seedPhrase: form.seedPhrase,
+        },
+      };
+
+      await onSubmit(formattedData);
       onOpenChange(false);
     } catch (error) {
       console.error("Submission error:", error);

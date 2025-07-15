@@ -54,6 +54,9 @@ export default function VaultAccessSection({ userId }) {
         throw new Error("Incorrect password or corrupted vault key");
       }
 
+      // Store the decrypted vault key in Redux
+      console.log("Decrypted vault key:", decryptedKey);
+
       dispatch(setVaultKey(decryptedKey));
       setIsDialogOpen(false);
       router.push("/dashboard/vault"); // Redirect to vault page after unlocking

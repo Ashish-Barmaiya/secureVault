@@ -36,7 +36,7 @@ export default function DashboardNavbar() {
   };
 
   return (
-    <nav className="w-full flex items-center justify-between px-6 py-4 bg-white backdrop-blur-md shadow-sm">
+    <nav className="w-full flex items-center justify-between px-6 py-5 bg-white backdrop-blur-md shadow-sm">
       {/* Left: Logo */}
       <Link
         href="/"
