@@ -4,10 +4,15 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import AddCryptoWalletForm from "./AddCryptoWalletForm";
+import AddSocialMediaForm from "./AddSocialMediaForm";
 
-export default function AddAssetButton({ onSubmitCryptoWallet }) {
+export default function AddAssetButton({
+  onSubmitCryptoWallet,
+  onSubmitSocialMedia,
+}) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [cryptoDialogOpen, setCryptoDialogOpen] = useState(false);
+  const [showSocialForm, setShowSocialForm] = useState(false); // ✅ FIXED
 
   const assetTypes = [
     { id: "crypto", label: "Crypto Wallet" },
@@ -32,9 +37,8 @@ export default function AddAssetButton({ onSubmitCryptoWallet }) {
                 <button
                   className="w-full text-left px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                   onClick={() => {
-                    if (asset.id === "crypto") {
-                      setCryptoDialogOpen(true);
-                    }
+                    if (asset.id === "crypto") setCryptoDialogOpen(true);
+                    if (asset.id === "social") setShowSocialForm(true); // ✅ Added
                     setDropdownOpen(false);
                   }}
                 >
@@ -50,6 +54,12 @@ export default function AddAssetButton({ onSubmitCryptoWallet }) {
         open={cryptoDialogOpen}
         onOpenChange={setCryptoDialogOpen}
         onSubmit={onSubmitCryptoWallet}
+      />
+
+      <AddSocialMediaForm
+        open={showSocialForm}
+        onOpenChange={setShowSocialForm}
+        onSubmit={onSubmitSocialMedia} // ✅ Make sure this handler is passed from parent
       />
     </div>
   );

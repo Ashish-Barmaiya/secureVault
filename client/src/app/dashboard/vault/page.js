@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Bitcoin,
 } from "lucide-react";
+import { safeJsonParse } from "@/utils/sanitizer";
 
 const categories = [
   { id: "all", label: "All Assets", count: 4, icon: <Folder size={18} /> },
@@ -148,10 +149,10 @@ export default function VaultDashboard() {
         { ciphertext, iv },
         vaultKey
       );
-
+      if (!decryptedString) throw new Error("Empty decrypted string");
       console.log("✅ Decrypted String:", decryptedString);
 
-      const parsed = JSON.parse(decryptedString); // crashing here
+      const parsed = JSON.parse(decryptedString);
 
       setDecryptedMap((prev) => ({
         ...prev,

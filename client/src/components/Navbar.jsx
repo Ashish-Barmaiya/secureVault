@@ -68,7 +68,7 @@ export default function Navbar() {
   return (
     <header className="w-full flex justify-between sticky items-center px-4 sm:px-8 py-5 bg-white shadow-sm">
       <Link href="/" className="flex items-center gap-2 ">
-        <Vault className="h-7 w-7 text-blue-600" />
+        <Vault className="h-8 w-8 text-blue-600" />
         <div className="text-2xl font-bold text-black/90">
           Secure<span className="text-blue-600">Vault</span>
         </div>

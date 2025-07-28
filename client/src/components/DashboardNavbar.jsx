@@ -36,14 +36,14 @@ export default function DashboardNavbar() {
   };
 
   return (
-    <nav className="w-full flex items-center justify-between px-6 py-5 bg-white backdrop-blur-md shadow-sm">
+    <nav className="w-full flex items-center justify-between px-6 py-6 bg-white backdrop-blur-md shadow-sm">
       {/* Left: Logo */}
       <Link
         href="/"
         className="flex items-center gap-2 hover:opacity-80 transition"
       >
         <Vault className="h-8 w-8 text-blue-600" />
-        <div className="text-2xl font-bold text-slate-700">
+        <div className="text-2xl font-bold text-black/90">
           Secure<span className="text-blue-600">Vault</span>
         </div>
       </Link>
@@ -62,7 +62,7 @@ export default function DashboardNavbar() {
           <DropdownMenu.Trigger asChild>
             <button className="flex items-center gap-2 text-sm text-slate-800 font-medium hover:text-blue-700 focus:outline-none">
               <UserCircle2 className="w-6 h-6 text-blue-700" />
-              {user?.email || "User"}
+              {user?.name || user?.email || "User"}
             </button>
           </DropdownMenu.Trigger>
 

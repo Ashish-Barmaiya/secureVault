@@ -17,10 +17,10 @@ const prisma = new PrismaClient();
 
 const initializeUserSignUp = async (req, res) => {
   // get data from request body
-  const { email, password } = req.body;
+  const { email, password, name } = req.body;
 
   // store user data in session
-  req.session.userDataInSession = { email, password };
+  req.session.userDataInSession = { email, password, name };
 
   try {
     // check if email already exists
@@ -116,6 +116,7 @@ const verifyOtpAndCreateNewUser = async (req, res) => {
       data: {
         email: userDataInSession.email,
         passwordHash: hashedPassword,
+        name: userDataInSession.name,
       },
     });
     if (!newUser) {

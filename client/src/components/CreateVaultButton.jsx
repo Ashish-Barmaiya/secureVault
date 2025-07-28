@@ -106,8 +106,8 @@ export default function CreateVaultButton({ userId }) {
       <div className="mt-6 flex justify-center">
         <Dialog.Root open={open} onOpenChange={setOpen}>
           <Dialog.Trigger asChild>
-            <button className="px-8 py-4 bg-gradient-to-r from-teal-700 to-blue-700 text-white text-lg font-semibold rounded-xl shadow-lg hover:brightness-110 transition-all duration-200">
-              🚀 Create Your Secure Vault
+            <button className="px-8 py-4 bg-white text-blue-700 text-lg font-semibold rounded-xl shadow-lg hover:bg-gray-100 hover:text-blue-500 transition-all duration-200">
+              Create Your Secure Vault
             </button>
           </Dialog.Trigger>
 

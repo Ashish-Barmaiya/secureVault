@@ -8,12 +8,14 @@ import { setVaultKey } from "@/store/vaultSlice";
 import VaultUnlockDialog from "./VaultUnlockDialog";
 import { Vault, Lock, Unlock } from "lucide-react";
 import { deriveMasterKey, decryptVaultKey } from "@/utils/vaultCrypto";
+import CreateVaultButton from "@/components/CreateVaultButton";
 
 export default function VaultAccessSection({ userId }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const user = useSelector((state) => state.user.user);
   const vaultKey = useSelector((state) => state.vault.vaultKey);
   const dispatch = useDispatch();
 
@@ -85,33 +87,40 @@ export default function VaultAccessSection({ userId }) {
           <Vault className="text-white opacity-20 w-5 h-5 sm:w-6 sm:h-6 absolute top-1/4 right-[15%] -rotate-3" />
           <Vault className="text-white opacity-20 w-5 h-5 sm:w-6 sm:h-6 absolute bottom-1/3 left-[20%] rotate-12" />
         </div>
+        <div className="relative z-20">
+          {user?.vaultCreated === false ? (
+            <div>
+              <CreateVaultButton />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={handleOpenVault}
+                className="flex items-center gap-2 px-6 py-3 text-base sm:text-lg font-semibold bg-white text-blue-700 rounded-2xl shadow-md transition-all duration-300 hover:bg-zinc-100"
+              >
+                <Vault size={24} className="text-blue-700" />
+                Open Vault
+              </button>
 
-        <div className="relative z-10 flex flex-col items-center gap-2">
-          <button
-            onClick={handleOpenVault}
-            className="flex items-center gap-2 px-6 py-3 text-base sm:text-lg font-semibold bg-white text-blue-700 rounded-2xl shadow-md transition-all duration-300 hover:bg-zinc-100"
-          >
-            <Vault size={24} className="text-blue-700" />
-            Open Vault
-          </button>
-
-          <span
-            className={`mt-0.5 inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full ${
-              vaultKey ? "bg-green-500 text-white" : "bg-red-500 text-white"
-            }`}
-          >
-            {vaultKey ? (
-              <>
-                <Unlock size={14} className="text-white" />
-                Unlocked
-              </>
-            ) : (
-              <>
-                <Lock size={14} className="text-white" />
-                Locked
-              </>
-            )}
-          </span>
+              <span
+                className={`mt-0.5 inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full ${
+                  vaultKey ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                }`}
+              >
+                {vaultKey ? (
+                  <>
+                    <Unlock size={14} className="text-white" />
+                    Unlocked
+                  </>
+                ) : (
+                  <>
+                    <Lock size={14} className="text-white" />
+                    Locked
+                  </>
+                )}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
