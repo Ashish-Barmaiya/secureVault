@@ -156,22 +156,44 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost/user/auth/google/callback",
+      callbackURL: "http://localhost/auth/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Check if user already exists in the database
-        let user = await user.findOne({ googleId: profile.id });
-        if (!user) {
-          // Create a new user if not found
-          user = await user.create({
-            googleId: profile.id,
-            email: profile.emails[0].value,
-            name: profile.displayName,
+        const email = profile.emails[0].value;
+
+        // 1. Find by googleId
+        let existingUser = await prisma.user.findFirst({
+          where: { googleId: profile.id },
+        });
+
+        // 2. If not found, check by email
+        if (!existingUser) {
+          const userByEmail = await prisma.user.findFirst({
+            where: { email },
           });
+
+          if (userByEmail) {
+            // Link Google account to existing user
+            existingUser = await prisma.user.update({
+              where: { id: userByEmail.id },
+              data: { googleId: profile.id },
+            });
+          } else {
+            // Create a new user
+            existingUser = await prisma.user.create({
+              data: {
+                googleId: profile.id,
+                email,
+                name: profile.displayName,
+              },
+            });
+          }
         }
-        return done(null, user);
+
+        return done(null, existingUser);
       } catch (err) {
+        console.error("Error in GoogleStrategy:", err);
         return done(err, null);
       }
     }
@@ -180,8 +202,12 @@ passport.use(
 
 // Serialize and deserialize user for session handling
 passport.serializeUser((user, done) => done(null, user.id));
+
 passport.deserializeUser(async (id, done) => {
-  const user = await user.findById(id);
+  // Find user by ID in the database
+  const user = await prisma.user.findUnique({
+    where: { id },
+  });
   done(null, user);
 });
 
@@ -196,13 +222,49 @@ const googleAuth = (req, res, next) => {
 
 // Google callback route
 const googleAuthCallback = (req, res, next) => {
-  passport.authenticate("google", { failureRedirect: "/" }, (err, user) => {
+  passport.authenticate("google", {}, async (err, user) => {
     if (err || !user) {
-      return res.status(401).json({ message: "Authentication failed" });
+      console.error("Google authentication failed:", err);
+      return res.redirect(
+        `http://localhost:3000/?authError=${encodeURIComponent(
+          err?.message || "authentication_failed"
+        )}`
+      );
     }
-    // Generate JWT token for the user
-    const token = generateTokens(user);
-    res.json({ token, message: "Google sign-in successful" });
+
+    try {
+      // Generate tokens
+      const tokens = generateTokens(user);
+
+      // set tokens in cookies
+      res.cookie("accessToken", tokens.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 1000, // 60 minutes
+      });
+      res.cookie("refreshToken", tokens.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      });
+
+      //Safe user data to send in response
+      const safeUser = santizeUserDataForDashboard(user);
+
+      // Return JSON with the full user object instead of redirecting
+      res.json({
+        success: true,
+        message: "Google authentication successful",
+        user: safeUser,
+      });
+    } catch (error) {
+      console.error("Error after Google auth:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error completing authentication",
+        error: error.message,
+      });
+    }
   })(req, res, next);
 };
 
@@ -220,6 +282,8 @@ const userLogin = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+
+    console.log("DB user", user);
 
     // verify password
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
@@ -384,7 +448,7 @@ const verifyTwoFactorCode = async (req, res) => {
       secret: user.twoFactorSecret,
       encoding: "base32",
       token,
-      window: 1, // 30s drift window
+      window: 5, // 30s drift window x 5
     });
 
     console.log("2FA verification result:", isVerified);

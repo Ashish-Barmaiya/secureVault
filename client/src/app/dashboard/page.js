@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Lock, Vault, Users, Plus, Scan } from "lucide-react";
 import DashboardNavbar from "@/components/DashboardNavbar";
+import TwoFactorStatusCard from "@/components/TwoFactorStatusCard";
 import VaultAccessSection from "@/components/VaultAccessSection";
 
 export default function DashboardPage() {
@@ -63,35 +64,8 @@ export default function DashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-orange-50 border flex flex-col sm:flex-row items-center justify-between gap-4 border-orange-200 p-4 rounded-lg shadow-sm max-w-md">
-                <div className="flex-1">
-                  <div className="flex items-start">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <div className="ml-3">
-                      <h3 className="text-orange-700 font-medium">
-                        Security Recommendation
-                      </h3>
-                      <p className="text-sm text-orange-600 mt-1">
-                        Two-factor authentication is needed to create your
-                        Secured Vault.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <button className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm font-medium transition-colors whitespace-nowrap">
-                  Enable 2FA
-                </button>
+              <div className="w-full md:w-auto">
+                <TwoFactorStatusCard enabled={user?.twoFactorEnabled} />
               </div>
             )}
           </div>

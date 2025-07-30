@@ -9,6 +9,7 @@ import { logout } from "@/store/userSlice";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { clearVaultKey } from "@/store/vaultSlice";
+import { toast } from "react-toastify";
 
 export default function DashboardNavbar() {
   const user = useSelector((state) => state.user.user);
@@ -23,11 +24,12 @@ export default function DashboardNavbar() {
 
       if (res.ok) {
         dispatch(logout());
-        persistor.purge();
         dispatch(clearVaultKey());
+        persistor.purge();
         router.push("/");
+        toast.success("Logged out successfully");
       } else {
-        alert("Logout failed");
+        toast.error("Logout failed");
       }
     } catch (err) {
       console.error(err);

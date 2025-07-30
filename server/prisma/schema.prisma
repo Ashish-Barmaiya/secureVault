@@ -16,7 +16,7 @@ datasource db {
 model User {
   id               String   @id @default(uuid())
   email            String   @unique
-  passwordHash     String
+  passwordHash     String?
   twoFactorSecret  String?
   twoFactorEnabled Boolean  @default(false)
   vaultCreated     Boolean  @default(false)

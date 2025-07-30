@@ -10,6 +10,7 @@ import {
   deriveMasterKey,
   encryptVaultKey,
 } from "@/utils/vaultCrypto";
+import { useSelector } from "react-redux";
 
 const passwordSchema = z
   .object({
@@ -32,6 +33,8 @@ export default function CreateVaultButton({ userId }) {
   const [isCreating, setIsCreating] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const user = useSelector((state) => state.user.user);
 
   const handleCreateVault = async () => {
     const validation = passwordSchema.safeParse({ password, confirmPassword });
@@ -111,64 +114,88 @@ export default function CreateVaultButton({ userId }) {
             </button>
           </Dialog.Trigger>
 
-          <Dialog.Portal>
-            <Dialog.Overlay className="bg-black/60 fixed inset-0 z-40 backdrop-blur-sm" />
-            <Dialog.Content className="z-50 fixed top-1/2 left-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-2xl border border-zinc-200 dark:border-zinc-700 focus:outline-none">
-              <Dialog.Title className="text-2xl font-bold mb-2 text-center text-zinc-900 dark:text-white">
-                Create Your Vault
-              </Dialog.Title>
-              <Dialog.Description className="text-sm mb-5 text-center text-zinc-600 dark:text-zinc-300">
-                Enter and confirm your master password.
-              </Dialog.Description>
+          {user?.twoFactorEnabled === false ? (
+            // If 2FA is NOT enabled
+            <Dialog.Portal>
+              <Dialog.Overlay className="bg-black/60 fixed inset-0 z-40 backdrop-blur-sm" />
+              <Dialog.Content className="z-50 fixed top-1/2 left-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-2xl border border-zinc-200 dark:border-white/90 focus:outline-none">
+                <Dialog.Title className="text-2xl font-bold mb-2 text-center text-zinc-900 dark:text-white">
+                  Two-Factor Authentication Required
+                </Dialog.Title>
+                <Dialog.Description className="text-sm mb-5 text-center text-zinc-600 dark:text-zinc-300">
+                  Please enable two-factor authentication in your account
+                  settings before creating a vault.
+                </Dialog.Description>
+                <div className="flex justify-center">
+                  <Dialog.Close asChild>
+                    <button className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-white rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors">
+                      Close
+                    </button>
+                  </Dialog.Close>
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          ) : (
+            // If 2FA is enabled
+            <Dialog.Portal>
+              <Dialog.Overlay className="bg-black/60 fixed inset-0 z-40 backdrop-blur-sm" />
+              <Dialog.Content className="z-50 fixed top-1/2 left-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-2xl border border-zinc-200 dark:border-zinc-700 focus:outline-none">
+                <Dialog.Title className="text-2xl font-bold mb-2 text-center text-zinc-900 dark:text-white">
+                  Create Your Vault
+                </Dialog.Title>
+                <Dialog.Description className="text-sm mb-5 text-center text-zinc-600 dark:text-zinc-300">
+                  Enter and confirm your master password.
+                </Dialog.Description>
 
-              <div className="space-y-4">
-                <div>
-                  <input
-                    type="password"
-                    className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring focus:ring-blue-500"
-                    placeholder="Master Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  {errors.password && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {errors.password}
-                    </p>
-                  )}
+                <div className="space-y-4">
+                  <div>
+                    <input
+                      type="password"
+                      className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring focus:ring-blue-500"
+                      placeholder="Master Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    {errors.password && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {errors.password}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <input
+                      type="password"
+                      className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring focus:ring-blue-500"
+                      placeholder="Confirm Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                    {errors.confirmPassword && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {errors.confirmPassword}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <input
-                    type="password"
-                    className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring focus:ring-blue-500"
-                    placeholder="Confirm Password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                  {errors.confirmPassword && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {errors.confirmPassword}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-between">
-                <Dialog.Close asChild>
-                  <button className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-white rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors">
-                    Cancel
+                <div className="mt-6 flex justify-between">
+                  <Dialog.Close asChild>
+                    <button className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-white rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors">
+                      Cancel
+                    </button>
+                  </Dialog.Close>
+                  <button
+                    disabled={isCreating}
+                    onClick={handleCreateVault}
+                    className="px-4 py-2 bg-gradient-to-r from-teal-700 to-blue-600 text-white rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
+                  >
+                    {isCreating ? "Creating..." : "Create Vault"}
                   </button>
-                </Dialog.Close>
-                <button
-                  disabled={isCreating}
-                  onClick={handleCreateVault}
-                  className="px-4 py-2 bg-gradient-to-r from-teal-700 to-blue-600 text-white rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
-                >
-                  {isCreating ? "Creating..." : "Create Vault"}
-                </button>
-              </div>
-            </Dialog.Content>
-          </Dialog.Portal>
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          )}
         </Dialog.Root>
       </div>
 

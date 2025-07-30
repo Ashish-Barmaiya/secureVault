@@ -1,7 +1,7 @@
 // components/Navbar.jsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
@@ -10,6 +10,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { z } from "zod";
 import { useDispatch } from "react-redux";
 import { login } from "@/store/userSlice";
+import { toast } from "react-toastify";
 
 const signInSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -25,7 +26,48 @@ export default function Navbar() {
 
   const router = useRouter();
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.user.user);
+  const user = useSelector((state) => state.user.user); // Get user from Redux store
+
+  /**
+   * TODO: Google OAuth Redirect Handling
+   */
+  // Effect to handle Google OAuth redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("userId");
+    const userName = params.get("userName");
+    const userEmail = params.get("userEmail");
+    const authError = params.get("authError");
+
+    // Handle Google login success
+    if (userId && userEmail && !user) {
+      // Only process if user not already in Redux
+      const googleUser = {
+        id: userId,
+        name: userName || "Google User", // Provide a default name if not present
+        email: userEmail,
+        // Add other fields if your userSlice expects them and they are sent via URL
+        // In a real app, you might make an API call here to /api/auth/me to get the full user object
+        // if the URL params are insufficient.
+      };
+
+      dispatch(login(googleUser));
+      // Remove the query parameters from the URL
+      router.replace("/dashboard", undefined, { shallow: true });
+      // Optionally close the sign-in dialog if it was open
+      setOpen(false);
+    } else if (authError) {
+      // Handle Google login failure
+      alert(
+        `Google login failed: ${
+          authError === "google"
+            ? "Authentication failed with Google."
+            : "Unknown error."
+        }`
+      );
+      router.replace("/", undefined, { shallow: true }); // Clean up the URL
+    }
+  }, [router, dispatch, user]); // Re-run effect if router, dispatch, or user state changes
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -54,15 +96,26 @@ export default function Navbar() {
 
       if (res.ok) {
         const data = await res.json();
+        console.log("Fresh user from backend:", data.user); // check twoFactorEnabled here
         dispatch(login(data.user));
         router.push("/dashboard?user=" + data.user.id);
+        // Close the sign-in dialog
+        setOpen(false);
+        toast.success("Login successful");
       } else {
-        alert("Login failed");
+        toast.error("Login failed");
       }
     } catch (err) {
       console.error(err);
-      alert("Something went wrong");
+      toast.error("Something went wrong");
     }
+  };
+
+  const handleGoogleSignInClick = () => {
+    // This initiates the Google OAuth flow by redirecting the browser
+    // to your backend's Google authentication route.
+    // The backend will then handle the OAuth process and redirect back.
+    window.location.href = "http://localhost/auth/auth/google";
   };
 
   return (
@@ -176,9 +229,7 @@ export default function Navbar() {
                   </div>
 
                   <button
-                    onClick={() =>
-                      (window.location.href = "/api/auth/auth/google")
-                    }
+                    onClick={handleGoogleSignInClick} // Call the new handler
                     className="w-full flex items-center justify-center gap-2 border border-gray-300 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     <img src="/google.png" alt="Google" className="h-5 w-5" />
@@ -217,10 +268,10 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-stone-100 backdrop-blur-md md:hidden">
-          <div className="flex justify-between items-center px-6 py-5 border-b border-gray-200">
+        <div className="fixed inset-0 z-50 bg-white backdrop-blur-md md:hidden">
+          <div className="flex justify-between items-center px-4 py-5 border-b border-gray-200">
             <Link href="/" className="flex items-center gap-2">
-              <Vault className="h-7 w-7 text-blue-600" />
+              <Vault className="h-8 w-8 text-blue-600" />
               <div className="text-2xl font-bold text-black/90">
                 Secure<span className="text-blue-600">Vault</span>
               </div>
