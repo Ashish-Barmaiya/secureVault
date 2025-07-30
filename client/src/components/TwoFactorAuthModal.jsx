@@ -14,7 +14,6 @@ export default function TwoFactorAuthModal({ isOpen, onClose, onSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const router = useRouter();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.user);
 

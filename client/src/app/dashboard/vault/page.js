@@ -207,7 +207,7 @@ export default function VaultDashboard() {
               <div className="bg-blue-600 p-2 rounded-lg">
                 <Vault size={22} className="text-white" />
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold">Secure Vault</h1>
+              <h1 className="text-xl sm:text-2xl font-bold">SecureVault</h1>
             </div>
 
             {/* Search bar */}

@@ -10,7 +10,8 @@ import {
   deriveMasterKey,
   encryptVaultKey,
 } from "@/utils/vaultCrypto";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { updateUser } from "@/store/userSlice";
 
 const passwordSchema = z
   .object({
@@ -35,6 +36,7 @@ export default function CreateVaultButton({ userId }) {
   const [copied, setCopied] = useState(false);
 
   const user = useSelector((state) => state.user.user);
+  const dispatch = useDispatch();
 
   const handleCreateVault = async () => {
     const validation = passwordSchema.safeParse({ password, confirmPassword });
@@ -85,6 +87,7 @@ export default function CreateVaultButton({ userId }) {
         setRecoveryDialogOpen(true);
         setPassword("");
         setConfirmPassword("");
+        // dispatch(updateUser({ vaultCreated: true }));
       } else {
         console.error("❌ Server error:", data);
         alert(data?.message || "❌ Failed to create vault.");
@@ -101,6 +104,11 @@ export default function CreateVaultButton({ userId }) {
     navigator.clipboard.writeText(recoveryKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleClose = () => {
+    dispatch(updateUser({ vaultCreated: true }));
+    setFinalConfirmOpen(false);
   };
 
   return (
@@ -248,7 +256,10 @@ export default function CreateVaultButton({ userId }) {
               ✅ Vault Created Successfully!
             </Dialog.Title>
             <Dialog.Close asChild>
-              <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+              <button
+                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                onClick={handleClose}
+              >
                 Close
               </button>
             </Dialog.Close>

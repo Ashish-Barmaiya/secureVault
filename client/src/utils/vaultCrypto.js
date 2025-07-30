@@ -1,5 +1,8 @@
+// /utils/vaultCrypto.js
+
 import CryptoJS from "crypto-js";
 
+// DERIVE_MASTER_KEY
 /**
  * Derives a 256-bit master encryption key from the user's password and salt using PBKDF2.
  * This key is used to encrypt/decrypt the vaultKey.
@@ -12,6 +15,7 @@ export function deriveMasterKey(password, salt) {
   return key.toString(CryptoJS.enc.Base64); // Base64 encoding for transport
 }
 
+// ENCRYPT_VAULT_KEY
 /**
  * Encrypts the vaultKey using the provided encryption key (masterKey or recoveryKey).
  * Returns ciphertext in Base64.
@@ -28,11 +32,12 @@ export function encryptVaultKey(vaultKey, encryptionKey) {
     }
   );
 
-  // We'll prepend IV to ciphertext so it can be recovered later during decryption
+  // Prepend IV to ciphertext so it can be recovered later during decryption
   const ivBase64 = iv.toString(CryptoJS.enc.Base64);
   return ivBase64 + ":" + encrypted.toString(); // e.g. iv:ciphertext
 }
 
+// GENERATE_RANDOM_SALT
 /**
  * Generates a random 128-bit salt for use with PBKDF2.
  */
@@ -40,6 +45,7 @@ export function generateSalt() {
   return CryptoJS.lib.WordArray.random(16).toString(CryptoJS.enc.Base64);
 }
 
+// GENERATE_RANDOM_VAULT_KEY
 /**
  * Generates a random 256-bit vaultKey used for encrypting vault contents.
  */
@@ -47,6 +53,7 @@ export function generateVaultKey() {
   return CryptoJS.lib.WordArray.random(32).toString(CryptoJS.enc.Base64);
 }
 
+// GENERATE_RANDOM_RECOVERY_KEY
 /**
  * Generates a 256-bit recovery key to optionally recover the vault later.
  */
@@ -54,6 +61,7 @@ export function generateRecoveryKey() {
   return CryptoJS.lib.WordArray.random(32).toString(CryptoJS.enc.Base64);
 }
 
+// DECRYPT_VAULT_KEY
 /**
  * Decrypts the encrypted vault key using the provided decryption key (masterKey or recoveryKey).
  * @param {string} encryptedData - The encrypted string in format "iv:ciphertext"
@@ -106,7 +114,7 @@ export async function importKeyFromVaultKey(vaultKey) {
   ]);
 }
 
-// Encrypt function
+// ENCRYPT_ASSET_DATA_USING_VAULT_KEY
 export async function encryptAssetData(plainText, vaultKey) {
   console.log("🔐 Encrypting this:", plainText);
 
@@ -126,7 +134,7 @@ export async function encryptAssetData(plainText, vaultKey) {
   };
 }
 
-// Decrypt function
+// DECRYPT_ASSET_DATA_USING_VAULT_KEY
 export async function decryptAssetData({ ciphertext, iv }, vaultKey) {
   const key = await importKeyFromVaultKey(vaultKey);
 
