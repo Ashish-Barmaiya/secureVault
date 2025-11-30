@@ -6,6 +6,7 @@ import { Loader2, XCircle } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { updateUser } from "@/store/userSlice";
+import { authFetch } from "@/utils/authFetch";
 
 export default function TwoFactorAuthModal({ isOpen, onClose, onSuccess }) {
   const [step, setStep] = useState(1); // 1 = Setup, 2 = Verification
@@ -28,7 +29,7 @@ export default function TwoFactorAuthModal({ isOpen, onClose, onSuccess }) {
     setIsLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/auth/2fa/setup", {
+      const response = await authFetch("/api/auth/2fa/setup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -61,7 +62,7 @@ export default function TwoFactorAuthModal({ isOpen, onClose, onSuccess }) {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/2fa/verify", {
+      const response = await authFetch("/api/auth/2fa/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

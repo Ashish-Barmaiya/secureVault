@@ -23,10 +23,20 @@ export default function Navbar() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
+  const [scrolled, setScrolled] = useState(false);
 
   const router = useRouter();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.user); // Get user from Redux store
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   /**
    * TODO: Google OAuth Redirect Handling
@@ -119,236 +129,242 @@ export default function Navbar() {
   };
 
   return (
-    <header className="w-full flex justify-between sticky items-center px-4 sm:px-8 py-5 bg-white shadow-sm">
-      <Link href="/" className="flex items-center gap-2 ">
-        <Vault className="h-8 w-8 text-blue-600" />
-        <div className="text-2xl font-bold text-black/90">
-          Secure<span className="text-blue-600">Vault</span>
-        </div>
-      </Link>
-
-      {/* Desktop Navigation */}
-      <div className="hidden md:flex gap-8 items-center">
-        <nav className="flex gap-6">
-          <Link
-            href="#features"
-            className="text-gray-600 tracking-wider hover:text-blue-500 transition"
-          >
-            Features
-          </Link>
-          <Link
-            href="#security"
-            className="text-gray-600 tracking-wider hover:text-blue-500 transition"
-          >
-            Security
-          </Link>
-          <Link
-            href="#pricing"
-            className="text-gray-600 tracking-wider hover:text-blue-500 transition"
-          >
-            Pricing
-          </Link>
-          <Link
-            href="#faq"
-            className="text-gray-600 tracking-wider hover:text-blue-500 transition"
-          >
-            FAQ
-          </Link>
-        </nav>
-
-        <div className="h-5 w-px bg-gray-200"></div>
-
-        {user ? (
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition-all"
-          >
-            Dashboard
-          </button>
-        ) : (
-          <>
-            <Dialog.Root open={open} onOpenChange={setOpen}>
-              <Dialog.Trigger asChild>
-                <button className="text-gray-600 hover:text-blue-500 transition">
-                  Sign In
-                </button>
-              </Dialog.Trigger>
-
-              <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-                <Dialog.Content className="fixed z-50 top-1/2 left-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl border border-gray-200 p-6">
-                  <Dialog.Title className="text-xl font-bold text-gray-900 text-center mb-6 mt-1">
-                    Sign In to SecureVault
-                  </Dialog.Title>
-
-                  <form onSubmit={handleSignIn} className="space-y-4">
-                    <div>
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                      {errors.email && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.email}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <input
-                        type="password"
-                        placeholder="Password"
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
-                      {errors.password && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.password}
-                        </p>
-                      )}
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium transition-all"
-                    >
-                      Sign In
-                    </button>
-                  </form>
-
-                  <div className="my-4 flex items-center">
-                    <div className="h-px bg-gray-200 flex-grow"></div>
-                    <span className="px-3 text-gray-500 text-sm">OR</span>
-                    <div className="h-px bg-gray-200 flex-grow"></div>
-                  </div>
-
-                  <button
-                    onClick={handleGoogleSignInClick} // Call the new handler
-                    className="w-full flex items-center justify-center gap-2 border border-gray-300 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    <img src="/google.png" alt="Google" className="h-5 w-5" />
-                    <span>Continue with Google</span>
-                  </button>
-
-                  <Dialog.Close asChild>
-                    <button
-                      className="absolute top-3 right-4 text-gray-500 hover:text-gray-900 p-1 rounded-full"
-                      aria-label="Close"
-                    >
-                      <X size={20} />
-                    </button>
-                  </Dialog.Close>
-                </Dialog.Content>
-              </Dialog.Portal>
-            </Dialog.Root>
-
-            <Link
-              href="/signup"
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium transition-all"
-            >
-              Get Started
-            </Link>
-          </>
-        )}
-      </div>
-
-      {/* Mobile menu button */}
-      <button
-        className="md:hidden text-gray-600 hover:text-blue-600"
-        onClick={() => setMobileMenuOpen(true)}
-      >
-        <Menu size={24} />
-      </button>
-
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-white backdrop-blur-md md:hidden">
-          <div className="flex justify-between items-center px-4 py-5 border-b border-gray-200">
-            <Link href="/" className="flex items-center gap-2">
-              <Vault className="h-8 w-8 text-blue-600" />
-              <div className="text-2xl font-bold text-black/90">
-                Secure<span className="text-blue-600">Vault</span>
-              </div>
-            </Link>
-            <button
-              className="text-gray-600 hover:text-blue-600"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <X size={24} />
-            </button>
+    <header 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? "bg-[#0f172a]/80 backdrop-blur-md border-b border-slate-800 py-4" : "bg-transparent py-6"
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 flex justify-between items-center">
+        <Link href="/" className="flex items-center gap-2 group">
+          <Vault className="h-8 w-8 text-blue-500 group-hover:text-blue-400 transition-colors" />
+          <div className="text-2xl font-bold text-white">
+            Secure<span className="text-blue-500 group-hover:text-blue-400 transition-colors">Vault</span>
           </div>
+        </Link>
 
-          <nav className="flex flex-col p-6 space-y-6">
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex gap-8 items-center">
+          <nav className="flex gap-6">
             <Link
               href="#features"
-              className="text-gray-600 hover:text-blue-600 text-lg py-3"
-              onClick={() => setMobileMenuOpen(false)}
+              className="text-slate-300 hover:text-white text-sm font-medium transition-colors"
             >
               Features
             </Link>
             <Link
               href="#security"
-              className="text-gray-600 hover:text-blue-600 text-lg py-3"
-              onClick={() => setMobileMenuOpen(false)}
+              className="text-slate-300 hover:text-white text-sm font-medium transition-colors"
             >
               Security
             </Link>
             <Link
               href="#pricing"
-              className="text-gray-600 hover:text-blue-600 text-lg py-3"
-              onClick={() => setMobileMenuOpen(false)}
+              className="text-slate-300 hover:text-white text-sm font-medium transition-colors"
             >
               Pricing
             </Link>
             <Link
               href="#faq"
-              className="text-gray-600 hover:text-blue-600 text-lg py-3"
-              onClick={() => setMobileMenuOpen(false)}
+              className="text-slate-300 hover:text-white text-sm font-medium transition-colors"
             >
               FAQ
             </Link>
+          </nav>
 
-            <div className="pt-8 border-t border-gray-200 space-y-4">
-              {user ? (
-                <button
-                  onClick={() => {
-                    router.push("/dashboard");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium"
-                >
-                  Dashboard
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={() => {
-                      setOpen(true);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
-                  >
+          <div className="h-5 w-px bg-slate-700"></div>
+
+          {user ? (
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-all font-medium shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_20px_rgba(37,99,235,0.5)]"
+            >
+              Dashboard
+            </button>
+          ) : (
+            <>
+              <Dialog.Root open={open} onOpenChange={setOpen}>
+                <Dialog.Trigger asChild>
+                  <button className="text-slate-300 hover:text-white transition-colors font-medium">
                     Sign In
                   </button>
-                  <Link
-                    href="/signup"
-                    className="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-lg font-medium text-center"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Get Started
-                  </Link>
-                </>
-              )}
-            </div>
-          </nav>
+                </Dialog.Trigger>
+
+                <Dialog.Portal>
+                  <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
+                  <Dialog.Content className="fixed z-50 top-1/2 left-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 bg-[#0f172a] rounded-2xl shadow-2xl border border-slate-800 p-8">
+                    <Dialog.Title className="text-2xl font-bold text-white text-center mb-8">
+                      Welcome Back
+                    </Dialog.Title>
+
+                    <form onSubmit={handleSignIn} className="space-y-5">
+                      <div>
+                        <input
+                          type="email"
+                          placeholder="Email address"
+                          className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                        />
+                        {errors.email && (
+                          <p className="text-red-400 text-sm mt-2 ml-1">
+                            {errors.email}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <input
+                          type="password"
+                          placeholder="Password"
+                          className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                        {errors.password && (
+                          <p className="text-red-400 text-sm mt-2 ml-1">
+                            {errors.password}
+                          </p>
+                        )}
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/20"
+                      >
+                        Sign In
+                      </button>
+                    </form>
+
+                    <div className="my-6 flex items-center">
+                      <div className="h-px bg-slate-800 flex-grow"></div>
+                      <span className="px-4 text-slate-500 text-sm">OR</span>
+                      <div className="h-px bg-slate-800 flex-grow"></div>
+                    </div>
+
+                    <button
+                      onClick={handleGoogleSignInClick} // Call the new handler
+                      className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-slate-900 py-3.5 rounded-xl font-medium transition-colors"
+                    >
+                      <img src="/google.png" alt="Google" className="h-5 w-5" />
+                      <span>Continue with Google</span>
+                    </button>
+
+                    <Dialog.Close asChild>
+                      <button
+                        className="absolute top-4 right-4 text-slate-500 hover:text-white p-2 rounded-full hover:bg-slate-800 transition-all"
+                        aria-label="Close"
+                      >
+                        <X size={20} />
+                      </button>
+                    </Dialog.Close>
+                  </Dialog.Content>
+                </Dialog.Portal>
+              </Dialog.Root>
+
+              <Link
+                href="/signup"
+                className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-medium transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_20px_rgba(37,99,235,0.5)]"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
-      )}
+
+        {/* Mobile menu button */}
+        <button
+          className="md:hidden text-slate-300 hover:text-white"
+          onClick={() => setMobileMenuOpen(true)}
+        >
+          <Menu size={24} />
+        </button>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 bg-[#0f172a] md:hidden">
+            <div className="flex justify-between items-center px-4 py-6 border-b border-slate-800">
+              <Link href="/" className="flex items-center gap-2">
+                <Vault className="h-8 w-8 text-blue-500" />
+                <div className="text-2xl font-bold text-white">
+                  Secure<span className="text-blue-500">Vault</span>
+                </div>
+              </Link>
+              <button
+                className="text-slate-400 hover:text-white"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <nav className="flex flex-col p-6 space-y-6">
+              <Link
+                href="#features"
+                className="text-slate-300 hover:text-white text-lg py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Features
+              </Link>
+              <Link
+                href="#security"
+                className="text-slate-300 hover:text-white text-lg py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Security
+              </Link>
+              <Link
+                href="#pricing"
+                className="text-slate-300 hover:text-white text-lg py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Pricing
+              </Link>
+              <Link
+                href="#faq"
+                className="text-slate-300 hover:text-white text-lg py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                FAQ
+              </Link>
+
+              <div className="pt-8 border-t border-slate-800 space-y-4">
+                {user ? (
+                  <button
+                    onClick={() => {
+                      router.push("/dashboard");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-medium shadow-lg shadow-blue-500/20"
+                  >
+                    Dashboard
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        setOpen(true);
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                    >
+                      Sign In
+                    </button>
+                    <Link
+                      href="/signup"
+                      className="block w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-medium text-center shadow-lg shadow-blue-500/20"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )}
+              </div>
+            </nav>
+          </div>
+        )}
+      </div>
     </header>
   );
 }

@@ -9,6 +9,7 @@ import VaultUnlockDialog from "./VaultUnlockDialog";
 import { Vault, Lock, Unlock } from "lucide-react";
 import { deriveMasterKey, decryptVaultKey } from "@/utils/vaultCrypto";
 import CreateVaultButton from "@/components/CreateVaultButton";
+import { authFetch } from "@/utils/authFetch";
 
 export default function VaultAccessSection({ userId }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -35,7 +36,7 @@ export default function VaultAccessSection({ userId }) {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("/api/dashboard/vault/unlock-vault");
+      const res = await authFetch("/api/dashboard/vault/unlock-vault");
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -73,19 +74,19 @@ export default function VaultAccessSection({ userId }) {
   return (
     <>
       <div
-        className="relative px-4 py-16 sm:px-6 sm:py-12 md:py-16 rounded-xl shadow-lg overflow-hidden bg-center bg-cover bg-no-repeat"
+        className="relative px-4 py-16 sm:px-6 sm:py-12 md:py-16 rounded-2xl shadow-lg overflow-hidden bg-center bg-cover bg-no-repeat border border-slate-700/50"
         style={{ backgroundImage: "url('/blob-scene-haikei.svg')" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-teal-500/40 to-blue-600/40 z-0" />
+        <div className="absolute inset-0 bg-gradient-to-r from-teal-900/80 to-blue-900/80 z-0 backdrop-blur-sm" />
 
         <div className="absolute inset-0 z-0 pointer-events-none">
-          <Vault className="text-white opacity-20 w-6 h-6 sm:w-8 sm:h-8 absolute top-4 left-4 rotate-12" />
-          <Vault className="text-white opacity-20 w-5 h-5 sm:w-7 sm:h-7 absolute top-8 right-6 -rotate-6" />
-          <Vault className="text-white opacity-20 w-7 h-7 sm:w-10 sm:h-10 absolute bottom-6 left-6 rotate-45" />
-          <Vault className="text-white opacity-20 w-6 h-6 sm:w-8 sm:h-8 absolute bottom-10 right-10 -rotate-12" />
-          <Vault className="text-white opacity-20 w-6 h-6 sm:w-8 sm:h-10 absolute top-8 left-1/2  rotate-6" />
-          <Vault className="text-white opacity-20 w-5 h-5 sm:w-6 sm:h-6 absolute top-1/4 right-[15%] -rotate-3" />
-          <Vault className="text-white opacity-20 w-5 h-5 sm:w-6 sm:h-6 absolute bottom-1/3 left-[20%] rotate-12" />
+          <Vault className="text-white opacity-10 w-6 h-6 sm:w-8 sm:h-8 absolute top-4 left-4 rotate-12" />
+          <Vault className="text-white opacity-10 w-5 h-5 sm:w-7 sm:h-7 absolute top-8 right-6 -rotate-6" />
+          <Vault className="text-white opacity-10 w-7 h-7 sm:w-10 sm:h-10 absolute bottom-6 left-6 rotate-45" />
+          <Vault className="text-white opacity-10 w-6 h-6 sm:w-8 sm:h-8 absolute bottom-10 right-10 -rotate-12" />
+          <Vault className="text-white opacity-10 w-6 h-6 sm:w-8 sm:h-10 absolute top-8 left-1/2  rotate-6" />
+          <Vault className="text-white opacity-10 w-5 h-5 sm:w-6 sm:h-6 absolute top-1/4 right-[15%] -rotate-3" />
+          <Vault className="text-white opacity-10 w-5 h-5 sm:w-6 sm:h-6 absolute bottom-1/3 left-[20%] rotate-12" />
         </div>
         <div className="relative z-20">
           {user?.vaultCreated === false ? (
@@ -93,28 +94,30 @@ export default function VaultAccessSection({ userId }) {
               <CreateVaultButton />
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-4">
               <button
                 onClick={handleOpenVault}
-                className="flex items-center gap-2 px-6 py-3 text-base sm:text-lg font-semibold bg-white text-blue-700 rounded-2xl shadow-md transition-all duration-300 hover:bg-zinc-100"
+                className="flex items-center gap-3 px-8 py-4 text-base sm:text-lg font-bold bg-white text-blue-900 rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all duration-300 hover:bg-blue-50 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]"
               >
-                <Vault size={24} className="text-blue-700" />
+                <Vault size={24} className="text-blue-600" />
                 Open Vault
               </button>
 
               <span
-                className={`mt-0.5 inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full ${
-                  vaultKey ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                className={`mt-2 inline-flex items-center gap-2 text-xs font-semibold px-4 py-1.5 rounded-full border ${
+                  vaultKey 
+                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" 
+                    : "bg-red-500/20 text-red-300 border-red-500/30"
                 }`}
               >
                 {vaultKey ? (
                   <>
-                    <Unlock size={14} className="text-white" />
+                    <Unlock size={14} />
                     Unlocked
                   </>
                 ) : (
                   <>
-                    <Lock size={14} className="text-white" />
+                    <Lock size={14} />
                     Locked
                   </>
                 )}
@@ -133,8 +136,11 @@ export default function VaultAccessSection({ userId }) {
       />
 
       {vaultKey && (
-        <div className="mt-4 bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl shadow">
-          <p className="text-sm">Vault is unlocked 🔓</p>
+        <div className="mt-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-xl shadow backdrop-blur-sm">
+          <p className="text-sm font-medium flex items-center gap-2">
+            <Unlock size={16} />
+            Vault is unlocked and ready for access
+          </p>
         </div>
       )}
     </>

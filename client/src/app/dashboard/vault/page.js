@@ -8,6 +8,7 @@ import { clearVaultKey } from "@/store/vaultSlice";
 import { useRouter } from "next/navigation";
 import { encryptAssetData, decryptAssetData } from "@/utils/vaultCrypto";
 import AddAssetButton from "@/components/AddAssetButton";
+import { authFetch } from "@/utils/authFetch";
 import {
   Vault,
   Eye,
@@ -88,7 +89,7 @@ export default function VaultDashboard() {
         createdAt: new Date().toISOString(),
       };
 
-      const response = await fetch(
+      const response = await authFetch(
         "/api/dashboard/vault/asset/add-crypto-wallet",
         {
           method: "POST",
@@ -111,7 +112,7 @@ export default function VaultDashboard() {
   };
   const fetchCryptoWallets = async () => {
     try {
-      const res = await fetch("/api/dashboard/vault/asset/crypto-wallet");
+      const res = await authFetch("/api/dashboard/vault/asset/crypto-wallet");
       if (!res.ok) throw new Error("Failed to fetch crypto wallets");
 
       const resJson = await res.json();

@@ -5,29 +5,29 @@ import Enable2FAButton from "./Enable2FAButton";
 export default function TwoFactorStatusCard({ enabled }) {
   return (
     <div
-      className={`rounded-xl p-4 shadow-sm max-w-md ${
+      className={`rounded-xl p-4 shadow-sm max-w-md backdrop-blur-sm border ${
         enabled
-          ? "bg-emerald-50 border border-emerald-200"
-          : "bg-orange-50 border border-orange-200"
+          ? "bg-emerald-500/10 border-emerald-500/20"
+          : "bg-orange-500/10 border-orange-500/20"
       }`}
     >
       <div className="flex items-start">
         {enabled ? (
-          <ShieldCheck className="h-6 w-6 text-emerald-600 mt-0.5 flex-shrink-0" />
+          <ShieldCheck className="h-6 w-6 text-emerald-400 mt-0.5 flex-shrink-0" />
         ) : (
-          <ShieldAlert className="h-6 w-6 text-orange-600 mt-0.5 flex-shrink-0" />
+          <ShieldAlert className="h-6 w-6 text-orange-400 mt-0.5 flex-shrink-0" />
         )}
         <div className="ml-3">
           <h3
             className={`font-medium ${
-              enabled ? "text-emerald-800" : "text-orange-700"
+              enabled ? "text-emerald-400" : "text-orange-400"
             }`}
           >
             {enabled ? "Security Enabled" : "Security Recommendation"}
           </h3>
           <p
             className={`text-sm mt-1 ${
-              enabled ? "text-emerald-700" : "text-orange-600"
+              enabled ? "text-emerald-400/80" : "text-orange-400/80"
             }`}
           >
             {enabled
@@ -38,7 +38,7 @@ export default function TwoFactorStatusCard({ enabled }) {
       </div>
 
       {!enabled && (
-        <div className="mt-3">
+        <div className="mt-4">
           <Enable2FAButton />
         </div>
       )}

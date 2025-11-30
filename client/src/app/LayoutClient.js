@@ -17,11 +17,11 @@ export default function LayoutClient({ children }) {
       <ToastContainer
         position="top-center"
         autoClose={3000}
-        hideProgressBar={false}
+        hideProgressBar={true}
         closeOnClick
         pauseOnHover
         draggable
-        theme="light"
+        theme="dark"
         style={{ zIndex: 9999 }}
       />
     </ReduxProvider>

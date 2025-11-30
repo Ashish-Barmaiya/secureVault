@@ -4,27 +4,31 @@ import Link from "next/link";
 
 export default function CTA() {
   return (
-    <section className="py-20 px-4 bg-white">
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="bg-gradient-to-r from-zinc-50 to-stone-50 border border-gray-200 rounded-2xl p-8 sm:p-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Ready to secure your digital legacy?
+    <section className="py-24 px-4 bg-[#0f172a]">
+      <div className="max-w-5xl mx-auto text-center">
+        <div className="relative bg-gradient-to-br from-blue-900/40 to-slate-900/40 border border-blue-500/20 rounded-3xl p-12 sm:p-16 overflow-hidden backdrop-blur-sm">
+          {/* Glow effects */}
+          <div className="absolute top-0 left-0 w-full h-full bg-blue-500/5 blur-[100px] pointer-events-none"></div>
+          
+          <h2 className="relative z-10 text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
+            Ready to secure your <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-400">digital legacy?</span>
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto mb-8">
+          <p className="relative z-10 text-slate-300 max-w-2xl mx-auto mb-10 text-lg">
             Join thousands of users who trust SecureVault to protect their most
-            valuable digital assets
+            valuable digital assets with military-grade encryption.
           </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="relative z-10 flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href="/signup"
-              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all"
+              className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all duration-300"
             >
               Get Started Free
             </Link>
             <Link
               href="/pricing"
-              className="px-8 py-4 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              className="px-8 py-4 bg-slate-800/50 hover:bg-slate-800 text-white border border-slate-700 font-medium rounded-xl transition-colors backdrop-blur-sm"
             >
               View Pricing Plans
             </Link>

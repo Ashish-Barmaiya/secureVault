@@ -10,7 +10,7 @@ import CryptoJS from "crypto-js";
 export function deriveMasterKey(password, salt) {
   const key = CryptoJS.PBKDF2(password, CryptoJS.enc.Base64.parse(salt), {
     keySize: 256 / 32,
-    iterations: 100_000,
+    iterations: 600_000, // OWASP standard is at least 600,000 iterations as of 2024
   });
   return key.toString(CryptoJS.enc.Base64); // Base64 encoding for transport
 }

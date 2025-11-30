@@ -4,6 +4,7 @@ import { logActivity } from "../utils/logActivity.js";
 
 const prisma = new PrismaClient();
 
+// CREATE VAULT
 const createVault = async (req, res) => {
   console.log("🛠️ Vault creation request received:", req.body);
 
@@ -86,6 +87,7 @@ const createVault = async (req, res) => {
   }
 };
 
+// UNLOCK VAULT
 const unlockVault = async (req, res) => {
   try {
     // get user from request

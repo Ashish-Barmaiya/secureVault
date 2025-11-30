@@ -15,6 +15,7 @@ env.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS);
 const prisma = new PrismaClient();
 
+// INITIALIZE USER SIGNUP AND SEND EMAIL OTP
 const initializeUserSignUp = async (req, res) => {
   // get data from request body
   const { email, password, name } = req.body;

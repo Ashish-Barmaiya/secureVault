@@ -50,13 +50,15 @@ model Vault {
 }
 
 model Heir {
-  id           String      @id @default(uuid())
-  name         String
-  email        String
-  relationship String // "Spouse", "Child", etc.
-  accessLevel  AccessLevel @default(VIEWER)
-  isVerified   Boolean     @default(false)
-  createdAt    DateTime    @default(now())
+  id               String      @id @default(uuid())
+  name             String
+  email            String
+  relationship     String // "Spouse", "Child", etc.
+  accessLevel      AccessLevel @default(VIEWER)
+  isVerified       Boolean // Add manually when creating heir (This field for email verification)
+  twoFactorEnabled Boolean     @default(false) // Needed when heir claims vault
+  twoFactorSecret  String?
+  createdAt        DateTime    @default(now())
 
   // Relations
   user         User                   @relation(fields: [userId], references: [id])

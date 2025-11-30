@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { z } from "zod";
+import { ShieldCheck, Lock, Mail, User, ArrowRight, RefreshCw } from "lucide-react";
 
 const signUpSchema = z
   .object({
@@ -180,43 +181,40 @@ export default function SignUpPage() {
   const getStrengthColor = () => {
     if (passwordStrength < 40) return "bg-red-500";
     if (passwordStrength < 70) return "bg-yellow-500";
-    return "bg-green-500";
+    return "bg-emerald-500";
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] p-4 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[100px]" />
+      </div>
+
+      <div className="bg-[#1e293b]/50 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-700/50 relative z-10">
         {/* Form Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-center">
-          <div className="flex justify-center mb-4"></div>
+        <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 p-8 text-center border-b border-slate-700/50">
+          <div className="flex justify-center mb-4">
+            <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+              <ShieldCheck className="w-8 h-8 text-blue-400" />
+            </div>
+          </div>
           <h1 className="text-2xl font-bold text-white">
             Create Secure Account
           </h1>
-          <p className="text-blue-100 mt-2">Join our security-first platform</p>
+          <p className="text-slate-400 mt-2">Join our security-first platform</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
                 Full Name
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
+                  <User className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                 </div>
                 <input
                   type="text"
@@ -224,36 +222,23 @@ export default function SignUpPage() {
                   placeholder="John Doe"
                   value={form.name}
                   onChange={handleChange}
-                  className={`block w-full pl-10 text-gray-700 pr-3 py-3 border ${
-                    errors.name ? "border-red-300" : "border-gray-300"
-                  } rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all`}
+                  className={`block w-full pl-10 text-white pr-3 py-3 bg-slate-900/50 border ${
+                    errors.name ? "border-red-500/50 focus:ring-red-500/50" : "border-slate-700 focus:ring-blue-500/50 focus:border-blue-500"
+                  } rounded-xl focus:outline-none focus:ring-2 transition-all placeholder-slate-600`}
                 />
               </div>
               {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                <p className="mt-1.5 text-sm text-red-400">{errors.name}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
                 Email Address
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                  </svg>
+                  <Mail className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                 </div>
                 <input
                   type="email"
@@ -261,36 +246,23 @@ export default function SignUpPage() {
                   placeholder="john@example.com"
                   value={form.email}
                   onChange={handleChange}
-                  className={`block w-full pl-10 text-gray-700 pr-3 py-3 border ${
-                    errors.email ? "border-red-300" : "border-gray-300"
-                  } rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all`}
+                  className={`block w-full pl-10 text-white pr-3 py-3 bg-slate-900/50 border ${
+                    errors.email ? "border-red-500/50 focus:ring-red-500/50" : "border-slate-700 focus:ring-blue-500/50 focus:border-blue-500"
+                  } rounded-xl focus:outline-none focus:ring-2 transition-all placeholder-slate-600`}
                 />
               </div>
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                <p className="mt-1.5 text-sm text-red-400">{errors.email}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
                 Password
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
+                  <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -298,19 +270,19 @@ export default function SignUpPage() {
                   placeholder="••••••••"
                   value={form.password}
                   onChange={handleChange}
-                  className={`block w-full pl-10 pr-10 text-gray-700 py-3 border ${
-                    errors.password ? "border-red-300" : "border-gray-300"
-                  } rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all`}
+                  className={`block w-full pl-10 pr-10 text-white py-3 bg-slate-900/50 border ${
+                    errors.password ? "border-red-500/50 focus:ring-red-500/50" : "border-slate-700 focus:ring-blue-500/50 focus:border-blue-500"
+                  } rounded-xl focus:outline-none focus:ring-2 transition-all placeholder-slate-600`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
                 >
                   {showPassword ? (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-gray-500"
+                      className="h-5 w-5"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -331,7 +303,7 @@ export default function SignUpPage() {
                   ) : (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-gray-500"
+                      className="h-5 w-5"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -348,48 +320,35 @@ export default function SignUpPage() {
               </div>
 
               {/* Password Strength Meter */}
-              <div className="mt-2">
-                <div className="flex justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-500">
+              <div className="mt-3">
+                <div className="flex justify-between mb-1.5">
+                  <span className="text-xs font-medium text-slate-400">
                     Password strength
                   </span>
-                  <span className="text-xs font-medium text-gray-500">
+                  <span className="text-xs font-medium text-slate-400">
                     {passwordStrength}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div className="w-full bg-slate-700 rounded-full h-1.5">
                   <div
-                    className={`h-1.5 rounded-full ${getStrengthColor()}`}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${getStrengthColor()}`}
                     style={{ width: `${passwordStrength}%` }}
                   ></div>
                 </div>
               </div>
 
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                <p className="mt-1.5 text-sm text-red-400">{errors.password}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
                 Confirm Password
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+                  <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                 </div>
                 <input
                   type="password"
@@ -397,15 +356,15 @@ export default function SignUpPage() {
                   placeholder="••••••••"
                   value={form.confirmPassword}
                   onChange={handleChange}
-                  className={`block w-full pl-10 text-gray-700 pr-3 py-3 border ${
+                  className={`block w-full pl-10 text-white pr-3 py-3 bg-slate-900/50 border ${
                     errors.confirmPassword
-                      ? "border-red-300"
-                      : "border-gray-300"
-                  } rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all`}
+                      ? "border-red-500/50 focus:ring-red-500/50"
+                      : "border-slate-700 focus:ring-blue-500/50 focus:border-blue-500"
+                  } rounded-xl focus:outline-none focus:ring-2 transition-all placeholder-slate-600`}
                 />
               </div>
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-1.5 text-sm text-red-400">
                   {errors.confirmPassword}
                 </p>
               )}
@@ -414,17 +373,18 @@ export default function SignUpPage() {
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3.5 rounded-lg font-medium transition-all transform hover:-translate-y-0.5 shadow-lg hover:shadow-blue-500/20"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-semibold transition-all transform hover:-translate-y-0.5 shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
           >
             Create Account
+            <ArrowRight className="w-4 h-4" />
           </button>
 
           <div className="text-center pt-2">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-slate-400">
               Already have an account?{" "}
               <a
                 href="/login"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
               >
                 Sign in
               </a>
@@ -435,38 +395,25 @@ export default function SignUpPage() {
 
       {/* OTP Dialog */}
       {showOtpDialog && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-center">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1e293b] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-700">
+            <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 p-8 text-center border-b border-slate-700/50">
               <div className="flex justify-center mb-4">
-                <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-8 w-8 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                    />
-                  </svg>
+                <div className="bg-blue-500/10 p-3 rounded-full border border-blue-500/20">
+                  <Mail className="h-8 w-8 text-blue-400" />
                 </div>
               </div>
               <h2 className="text-xl font-bold text-white">
                 Verify Your Email
               </h2>
-              <p className="text-blue-100 mt-2">
-                Enter the code sent to {form.email}
+              <p className="text-slate-400 mt-2">
+                Enter the code sent to <span className="text-white font-medium">{form.email}</span>
               </p>
             </div>
 
-            <div className="p-6">
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
+            <div className="p-8">
+              <div className="mb-8">
+                <label className="block text-sm font-medium text-slate-300 mb-4 text-center">
                   6-Digit Verification Code
                 </label>
                 <div className="flex justify-center space-x-3">
@@ -487,11 +434,11 @@ export default function SignUpPage() {
                         }
                       }}
                       id={`otp-${i}`}
-                      className="w-12 h-12 text-2xl text-gray-900 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-12 h-12 text-2xl text-white text-center bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                   ))}
                 </div>
-                <p className="text-center text-red-500 text-sm mt-3">
+                <p className="text-center text-red-400 text-sm mt-4">
                   OTP expires in 15 minutes
                 </p>
               </div>
@@ -499,7 +446,7 @@ export default function SignUpPage() {
               <div className="space-y-4">
                 <button
                   onClick={handleVerifyOtp}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3.5 rounded-lg font-medium transition-all shadow-lg hover:shadow-blue-500/20"
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/25"
                 >
                   Verify & Complete Registration
                 </button>
@@ -507,31 +454,18 @@ export default function SignUpPage() {
                 <button
                   disabled={!canResend}
                   onClick={handleResend}
-                  className={`w-full py-3 rounded-lg font-medium transition-all ${
+                  className={`w-full py-3.5 rounded-xl font-medium transition-all ${
                     canResend
-                      ? "bg-gray-100 text-blue-600 hover:bg-gray-200"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      ? "bg-slate-800 text-blue-400 hover:bg-slate-700"
+                      : "bg-slate-800/50 text-slate-500 cursor-not-allowed"
                   }`}
                 >
                   {canResend ? (
                     "Resend OTP"
                   ) : (
-                    <span className="flex items-center justify-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 mr-1.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      Resend in {resendTimer} seconds
+                    <span className="flex items-center justify-center gap-2">
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Resend in {resendTimer}s
                     </span>
                   )}
                 </button>

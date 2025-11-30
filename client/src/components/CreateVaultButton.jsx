@@ -12,6 +12,7 @@ import {
 } from "@/utils/vaultCrypto";
 import { useSelector, useDispatch } from "react-redux";
 import { updateUser } from "@/store/userSlice";
+import { authFetch } from "@/utils/authFetch";
 
 const passwordSchema = z
   .object({
@@ -61,7 +62,7 @@ export default function CreateVaultButton({ userId }) {
       const encryptedVaultKey = encryptVaultKey(vaultKey, masterKey);
       const encryptedRecoveryKey = encryptVaultKey(vaultKey, recoveryKeyGen);
 
-      const response = await fetch("/api/dashboard/vault/create-vault", {
+      const response = await authFetch("/api/dashboard/vault/create-vault", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
