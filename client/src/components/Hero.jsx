@@ -2,8 +2,10 @@
 "use client";
 import Link from "next/link";
 import { ShieldCheck, Lock, Server } from "lucide-react";
+import { useSelector } from "react-redux";
 
 export default function Hero() {
+  const heir = useSelector((state) => state.heir.heir);
   return (
     <section className="relative px-4 py-24 sm:py-32 lg:py-40 overflow-hidden bg-[#0f172a]">
       {/* Background effects */}
@@ -43,6 +45,10 @@ export default function Hero() {
             <button className="px-8 py-4 bg-slate-800/50 hover:bg-slate-800 text-white border border-slate-700 font-medium rounded-xl transition-colors backdrop-blur-sm">
               View Live Demo
             </button>
+          </div>
+          
+          <div className="mt-6 text-sm text-slate-400">
+            Are you a designated heir? <Link href={heir ? "/heir/dashboard" : "/heir/login"} className="text-blue-400 hover:underline">Access Heir Portal</Link>
           </div>
           
           <div className="mt-12 flex items-center gap-6 text-slate-500 text-sm font-medium">

@@ -52,6 +52,8 @@ import homeRouter from "./routes/home.router.js";
 import authRouter from "./routes/auth.router.js";
 import vaultRouter from "./routes/vault.router.js";
 import assetRouter from "./routes/asset.router.js";
+import heirAuthRouter from "./routes/heir.auth.router.js";
+import userRouter from "./routes/user.router.js";
 // import heirRouter from "./routes/heir.router.js";
 
 // Use routes
@@ -59,4 +61,7 @@ app.use("/", homeRouter);
 app.use("/auth", authRouter);
 app.use("/dashboard/vault", vaultRouter);
 app.use("/dashboard/vault/asset", assetRouter);
+app.use("/dashboard/vault/asset", assetRouter);
+app.use("/heir/auth", heirAuthRouter);
+app.use("/user", userRouter);
 // app.use("/dashboard/heir", heirRouter);

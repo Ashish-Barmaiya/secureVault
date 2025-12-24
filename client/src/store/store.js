@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import userReducer from "./userSlice";
+import heirReducer from "./heirSlice";
 import vaultReducer from "./vaultSlice";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "./storage";
@@ -20,6 +21,7 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
   user: userReducer,
+  heir: heirReducer,
   vault: vaultReducer,
 });
 

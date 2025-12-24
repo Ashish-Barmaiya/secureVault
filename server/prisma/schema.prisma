@@ -36,13 +36,14 @@ model User {
 }
 
 model Vault {
-  id                   String   @id @default(uuid())
-  userId               String   @unique
-  encryptedVaultKey    String // Server-encrypted (from user-encrypted vault key
-  encryptedRecoveryKey String // Server-encrypted (from user-encrypted vault key using recovery key)
-  salt                 String // From PBKDF2 used with master password
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                      String   @id @default(uuid())
+  userId                  String   @unique
+  encryptedVaultKey       String // Server-encrypted (from user-encrypted vault key
+  encryptedRecoveryKey    String // Server-encrypted (from user-encrypted vault key using recovery key)
+  encryptedVaultKeyByHeir String? // Vault Key encrypted with Heir's Public Key
+  salt                    String // From PBKDF2 used with master password
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   // Relations
   user          User           @relation(fields: [userId], references: [id])
@@ -50,19 +51,23 @@ model Vault {
 }
 
 model Heir {
-  id               String      @id @default(uuid())
-  name             String
-  email            String
-  relationship     String // "Spouse", "Child", etc.
-  accessLevel      AccessLevel @default(VIEWER)
-  isVerified       Boolean // Add manually when creating heir (This field for email verification)
-  twoFactorEnabled Boolean     @default(false) // Needed when heir claims vault
-  twoFactorSecret  String?
-  createdAt        DateTime    @default(now())
+  id                  String      @id @default(uuid())
+  name                String
+  email               String
+  relationship        String // "Spouse", "Child", etc.
+  accessLevel         AccessLevel @default(VIEWER)
+  isVerified          Boolean     @default(false) // Updated to default false, verified via crypto flow
+  passwordHash        String? // Heir's master password hash
+  publicKey           String? // Heir's RSA Public Key
+  encryptedPrivateKey String? // Heir's RSA Private Key encrypted with Heir's Master Key
+  salt                String? // Salt for Heir's Master Password
+  twoFactorEnabled    Boolean     @default(false) // Needed when heir claims vault
+  twoFactorSecret     String?
+  createdAt           DateTime    @default(now())
 
   // Relations
-  user         User                   @relation(fields: [userId], references: [id])
-  userId       String
+  user         User?                  @relation(fields: [userId], references: [id])
+  userId       String?
   verification VerificationDocument[]
 }
 

@@ -6,7 +6,7 @@ env.config();
 // Generate tokens
 const generateTokens = (user) => {
   const accessToken = jwt.sign(
-    { id: user.id, email: user.email },
+    { id: user.id, email: user.email, role: user.role },
     process.env.JWT_ACCESS_SECRET,
     { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN }
   );

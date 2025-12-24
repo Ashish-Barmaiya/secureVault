@@ -10,6 +10,7 @@ import {
   deriveMasterKey,
   encryptVaultKey,
 } from "@/utils/vaultCrypto";
+import { encryptVaultKeyWithHeirPublicKey } from "@/utils/heirCrypto";
 import { useSelector, useDispatch } from "react-redux";
 import { updateUser } from "@/store/userSlice";
 import { authFetch } from "@/utils/authFetch";
@@ -35,6 +36,24 @@ export default function CreateVaultButton({ userId }) {
   const [isCreating, setIsCreating] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState("");
   const [copied, setCopied] = useState(false);
+  const [heirs, setHeirs] = useState([]);
+
+  useEffect(() => {
+    if (open) {
+      const fetchHeirs = async () => {
+        try {
+          const res = await authFetch("http://localhost:5000/user/heirs");
+          const data = await res.json();
+          if (data.success) {
+            setHeirs(data.heirs.filter(h => h.isVerified && h.publicKey));
+          }
+        } catch (error) {
+          console.error("Failed to fetch heirs", error);
+        }
+      };
+      fetchHeirs();
+    }
+  }, [open]);
 
   const user = useSelector((state) => state.user.user);
   const dispatch = useDispatch();
@@ -62,6 +81,21 @@ export default function CreateVaultButton({ userId }) {
       const encryptedVaultKey = encryptVaultKey(vaultKey, masterKey);
       const encryptedRecoveryKey = encryptVaultKey(vaultKey, recoveryKeyGen);
 
+      // Encrypt for Heirs
+      let encryptedVaultKeyByHeir = null;
+      if (heirs.length > 0) {
+        const heirKeys = {};
+        for (const heir of heirs) {
+          try {
+            const encryptedForHeir = await encryptVaultKeyWithHeirPublicKey(vaultKey, heir.publicKey);
+            heirKeys[heir.id] = encryptedForHeir;
+          } catch (err) {
+            console.error(`Failed to encrypt for heir ${heir.email}`, err);
+          }
+        }
+        encryptedVaultKeyByHeir = JSON.stringify(heirKeys);
+      }
+
       const response = await authFetch("/api/dashboard/vault/create-vault", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,6 +103,7 @@ export default function CreateVaultButton({ userId }) {
           salt,
           encryptedVaultKey,
           encryptedRecoveryKey,
+          encryptedVaultKeyByHeir,
         }),
       });
 

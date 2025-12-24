@@ -13,7 +13,7 @@ const createVault = async (req, res) => {
     const userId = req.user.id;
 
     // get data from request body
-    const { encryptedVaultKey, encryptedRecoveryKey, salt } = req.body;
+    const { encryptedVaultKey, encryptedRecoveryKey, salt, encryptedVaultKeyByHeir } = req.body;
     if (!userId || !encryptedVaultKey || !encryptedRecoveryKey || !salt) {
       return res
         .status(400)
@@ -53,6 +53,7 @@ const createVault = async (req, res) => {
         userId,
         encryptedVaultKey: JSON.stringify({ ciphertext, iv }),
         encryptedRecoveryKey: JSON.stringify(serverEncryptedRecoveryKey),
+        encryptedVaultKeyByHeir, // Store as is (already encrypted by client)
         salt,
       },
     });
@@ -94,7 +95,7 @@ const unlockVault = async (req, res) => {
     const userId = req.user.id;
 
     // check if user exists
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user   = await prisma.user.findUnique({ where: { id: userId } });
     if (!user)
       return res
         .status(404)

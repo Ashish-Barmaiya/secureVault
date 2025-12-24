@@ -8,7 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function LayoutClient({ children }) {
   const pathname = usePathname();
-  const isDashboard = pathname.startsWith("/dashboard");
+  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/heir/dashboard");
 
   return (
     <ReduxProvider>

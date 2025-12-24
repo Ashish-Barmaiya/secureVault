@@ -28,6 +28,7 @@ export default function Navbar() {
   const router = useRouter();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.user); // Get user from Redux store
+  const heir = useSelector((state) => state.heir.heir); // Get heir from Redux store
 
   // Handle scroll effect
   useEffect(() => {
@@ -168,6 +169,15 @@ export default function Navbar() {
               className="text-slate-300 hover:text-white text-sm font-medium transition-colors"
             >
               FAQ
+            </Link>
+            <Link
+              href={heir ? "/heir/dashboard" : "/heir/login"}
+              // className="text-slate-300 hover:text-white text-sm font-medium transition-colors"
+            >
+              <span className="relative z-10 hover:text-white text-sm font-medium text-slate-300 group-hover:text-blue-400 flex items-center gap-2 ">
+                {/* <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> */}
+                Heir Portal
+              </span>
             </Link>
           </nav>
 
@@ -327,6 +337,14 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 FAQ
+              </Link>
+              <Link
+                href={heir ? "/heir/dashboard" : "/heir/login"}
+                className="flex items-center gap-3 text-slate-300 hover:text-white text-lg py-2 group"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                Heir Portal
               </Link>
 
               <div className="pt-8 border-t border-slate-800 space-y-4">
