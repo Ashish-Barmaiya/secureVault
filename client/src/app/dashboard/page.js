@@ -64,7 +64,9 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-[#1e293b]/50 border border-slate-700/50 p-5 rounded-2xl shadow-sm flex flex-col gap-3 backdrop-blur-sm hover:bg-[#1e293b]/70 transition-colors">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm text-slate-400 font-medium">Total Assets</h3>
+              <h3 className="text-sm text-slate-400 font-medium">
+                Total Assets
+              </h3>
               <div className="p-2 bg-blue-500/10 rounded-lg">
                 <Vault className="text-blue-400 h-5 w-5" />
               </div>
@@ -76,7 +78,9 @@ export default function DashboardPage() {
 
           <div className="bg-[#1e293b]/50 border border-slate-700/50 p-5 rounded-2xl shadow-sm flex flex-col gap-3 backdrop-blur-sm hover:bg-[#1e293b]/70 transition-colors">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm text-slate-400 font-medium">Active Heirs</h3>
+              <h3 className="text-sm text-slate-400 font-medium">
+                Active Heirs
+              </h3>
               <div className="p-2 bg-purple-500/10 rounded-lg">
                 <Users className="text-purple-400 h-5 w-5" />
               </div>
@@ -88,7 +92,9 @@ export default function DashboardPage() {
 
           <div className="bg-[#1e293b]/50 border border-slate-700/50 p-5 rounded-2xl shadow-sm flex flex-col gap-3 backdrop-blur-sm hover:bg-[#1e293b]/70 transition-colors">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm text-slate-400 font-medium">Security Score</h3>
+              <h3 className="text-sm text-slate-400 font-medium">
+                Security Score
+              </h3>
               <div className="p-2 bg-emerald-500/10 rounded-lg">
                 <ShieldCheck className="text-emerald-400 h-5 w-5" />
               </div>
@@ -101,7 +107,9 @@ export default function DashboardPage() {
 
           <div className="bg-[#1e293b]/50 border border-slate-700/50 p-5 rounded-2xl shadow-sm flex flex-col gap-3 backdrop-blur-sm hover:bg-[#1e293b]/70 transition-colors">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm text-slate-400 font-medium">Vault Status</h3>
+              <h3 className="text-sm text-slate-400 font-medium">
+                Vault Status
+              </h3>
               <div className="p-2 bg-amber-500/10 rounded-lg">
                 <Lock className="text-amber-400 h-5 w-5" />
               </div>
@@ -123,7 +131,10 @@ export default function DashboardPage() {
             <Plus size={18} />
             Add Asset
           </button>
-          <button className="flex items-center gap-2 justify-center text-white py-3 rounded-xl bg-purple-600 hover:bg-purple-500 transition-all shadow-lg shadow-purple-500/20 font-medium">
+          <button
+            onClick={() => router.push("/dashboard/heirs")}
+            className="flex items-center gap-2 justify-center text-white py-3 rounded-xl bg-purple-600 hover:bg-purple-500 transition-all shadow-lg shadow-purple-500/20 font-medium"
+          >
             <Users size={18} />
             Manage Heirs
           </button>
@@ -137,10 +148,11 @@ export default function DashboardPage() {
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-[#1e293b]/50 border border-slate-700/50 p-6 rounded-2xl shadow-sm backdrop-blur-sm">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-semibold text-white">
-                Heirs Status
-              </h2>
-              <button className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
+              <h2 className="text-lg font-semibold text-white">Heirs Status</h2>
+              <button
+                onClick={() => router.push("/dashboard/heirs")}
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              >
                 + Add
               </button>
             </div>
@@ -154,7 +166,9 @@ export default function DashboardPage() {
                   verified
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-2">Last contact: 2 days ago</p>
+              <p className="text-xs text-slate-500 mt-2">
+                Last contact: 2 days ago
+              </p>
             </div>
           </div>
 

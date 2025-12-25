@@ -7,7 +7,10 @@ import { authFetch } from "@/utils/authFetch";
 export default function HeirsPage() {
   const [heirs, setHeirs] = useState([]);
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [relationship, setRelationship] = useState("");
+  const [searchResult, setSearchResult] = useState(null); // { status: "AVAILABLE" | "PENDING" | "LINKED", heir: ... }
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [requestLoading, setRequestLoading] = useState(false);
 
   const fetchHeirs = async () => {
     try {
@@ -25,28 +28,62 @@ export default function HeirsPage() {
     fetchHeirs();
   }, []);
 
-  const handleLinkHeir = async () => {
+  const handleSearchHeir = async () => {
     if (!email) return;
-    setLoading(true);
+    setSearchLoading(true);
+    setSearchResult(null);
     try {
-      const res = await authFetch("/api/user/link-heir", {
+      const res = await authFetch("/api/user/search-heir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
+
+      if (res.ok) {
+        setSearchResult({ status: data.status, heir: data.heir });
+      } else {
+        // Handle specific error cases
+        if (res.status === 404) {
+          alert(
+            "No heir registered with this email. Please ask them to register as an Heir in SecureVault."
+          );
+        } else {
+          alert(data.message || "Error searching heir");
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to search heir");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleRequestLink = async () => {
+    if (!email) return;
+    setRequestLoading(true);
+    try {
+      const res = await authFetch("/api/user/request-link-heir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, relationship }),
+      });
+      const data = await res.json();
       if (data.success) {
-        alert("Heir linked successfully!");
+        alert("Linking request sent! Waiting for heir confirmation.");
         setEmail("");
-        fetchHeirs();
+        setRelationship("");
+        setSearchResult(null);
+        fetchHeirs(); // Refresh list to show pending
       } else {
         alert(data.message);
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to link heir");
+      alert("Failed to send request");
     } finally {
-      setLoading(false);
+      setRequestLoading(false);
     }
   };
 
@@ -59,7 +96,7 @@ export default function HeirsPage() {
         {/* Link Heir Section */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
           <h2 className="text-xl font-semibold mb-4">Link a New Heir</h2>
-          <div className="flex gap-4">
+          <div className="flex gap-4 mb-4">
             <input
               type="email"
               placeholder="Enter Heir's Email"
@@ -68,13 +105,57 @@ export default function HeirsPage() {
               className="flex-1 p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500"
             />
             <button
-              onClick={handleLinkHeir}
-              disabled={loading}
+              onClick={handleSearchHeir}
+              disabled={searchLoading}
               className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded font-bold disabled:bg-gray-600"
             >
-              {loading ? "Linking..." : "Link Heir"}
+              {searchLoading ? "Searching..." : "Search"}
             </button>
           </div>
+
+          {searchResult && searchResult.status === "AVAILABLE" && (
+            <div className="bg-gray-700 p-4 rounded-lg animate-fade-in">
+              <p className="mb-2 text-green-400">
+                Heir found:{" "}
+                <span className="font-bold text-white">
+                  {searchResult.heir.name}
+                </span>{" "}
+                ({searchResult.heir.email})
+              </p>
+              <p className="mb-4 text-sm text-gray-300">
+                This heir is available for linking.
+              </p>
+
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  placeholder="Relationship (e.g. Spouse, Brother) - Optional"
+                  value={relationship}
+                  onChange={(e) => setRelationship(e.target.value)}
+                  className="flex-1 p-2 rounded bg-gray-600 border border-gray-500 focus:outline-none focus:border-blue-500"
+                />
+                <button
+                  onClick={handleRequestLink}
+                  disabled={requestLoading}
+                  className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded font-bold disabled:bg-gray-600"
+                >
+                  {requestLoading ? "Sending Request..." : "Send Request"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {searchResult && searchResult.status === "PENDING" && (
+            <div className="bg-gray-700 p-4 rounded-lg">
+              <p className="text-yellow-400">
+                Request Pending: You have already sent a request to{" "}
+                <span className="font-bold text-white">
+                  {searchResult.heir.name}
+                </span>
+                .
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Linked Heirs List */}
@@ -94,20 +175,30 @@ export default function HeirsPage() {
                       <p className="font-bold">{heir.name}</p>
                       <p className="text-sm text-gray-400">{heir.email}</p>
                     </div>
-                    <div className="text-right">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${
-                          heir.isVerified
-                            ? "bg-green-900 text-green-300"
-                            : "bg-yellow-900 text-yellow-300"
-                        }`}
-                      >
-                        {heir.isVerified ? "Verified" : "Pending Verification"}
-                      </span>
-                      {heir.isVerified && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Public Key Available
-                        </p>
+                    <div className="text-right flex flex-col items-end gap-1">
+                      {heir.linkStatus === "PENDING" ? (
+                        <span className="px-2 py-1 rounded text-xs bg-yellow-600 text-white">
+                          Request Pending
+                        </span>
+                      ) : (
+                        <>
+                          <span
+                            className={`px-2 py-1 rounded text-xs ${
+                              heir.isVerified
+                                ? "bg-green-900 text-green-300"
+                                : "bg-blue-900 text-blue-300"
+                            }`}
+                          >
+                            {heir.isVerified
+                              ? "Verified"
+                              : "Linked (Not Verified)"}
+                          </span>
+                          {heir.isVerified && (
+                            <p className="text-xs text-gray-500">
+                              Public Key Available
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

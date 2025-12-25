@@ -1,5 +1,6 @@
 // components/HeirTwoFactorAuthModal.jsx
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Loader2, XCircle } from "lucide-react";
 import { toast } from "react-toastify";
@@ -27,11 +28,11 @@ export default function HeirTwoFactorAuthModal({ isOpen, onClose, onSuccess }) {
       const response = await authFetch("/api/heir/auth/2fa/setup", {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
+          "Content-Type": "application/json",
         },
       });
-      
-      // Actually, let's use authFetch if we are using tokens. 
+
+      // Actually, let's use authFetch if we are using tokens.
       // The heir login sets a cookie? Or returns a token?
       // Let's check heir.auth.controller.js or login response.
       // Login page didn't save token to localStorage. It just pushed router.
@@ -42,7 +43,7 @@ export default function HeirTwoFactorAuthModal({ isOpen, onClose, onSuccess }) {
       // Let's use the same pattern as the previous `Heir2FASetup` page.
       // It used `fetch("http://localhost:5000/heir/auth/2fa/setup")`.
       // If that worked, then cookies are working.
-      
+
       const data = await response.json();
 
       if (data.success) {
@@ -95,9 +96,15 @@ export default function HeirTwoFactorAuthModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
     <>
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div className="bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-700 text-white">
@@ -238,6 +245,7 @@ export default function HeirTwoFactorAuthModal({ isOpen, onClose, onSuccess }) {
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

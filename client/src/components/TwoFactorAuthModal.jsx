@@ -1,5 +1,6 @@
 // components/TwoFactorAuthModal.jsx
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Loader2, XCircle } from "lucide-react";
@@ -96,9 +97,15 @@ export default function TwoFactorAuthModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
     <>
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100">
@@ -238,6 +245,7 @@ export default function TwoFactorAuthModal({ isOpen, onClose, onSuccess }) {
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

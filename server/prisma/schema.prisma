@@ -63,6 +63,7 @@ model Heir {
   salt                String? // Salt for Heir's Master Password
   twoFactorEnabled    Boolean     @default(false) // Needed when heir claims vault
   twoFactorSecret     String?
+  linkStatus          LinkStatus? // PENDING, LINKED
   createdAt           DateTime    @default(now())
 
   // Relations
@@ -74,6 +75,11 @@ model Heir {
 enum AccessLevel {
   VIEWER // Can view assets
   EXECUTOR // Can transfer assets
+}
+
+enum LinkStatus {
+  PENDING
+  LINKED
 }
 
 model VerificationDocument {
