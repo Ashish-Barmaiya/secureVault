@@ -13,7 +13,7 @@ export default function HeirVerify() {
 
   useEffect(() => {
     // Check if already verified
-    // We can't easily check without an API call. 
+    // We can't easily check without an API call.
     // Let's assume the user lands here. If they submit and it says "already verified" or we add a "am I verified" endpoint.
     // For now, let's just leave it. If they re-verify, it updates keys (which might be bad if they lose old ones, but they need master password).
     // Actually, if they are verified, they shouldn't be here.
@@ -42,7 +42,7 @@ export default function HeirVerify() {
       const encryptedPrivateKey = encryptHeirPrivateKey(privateKey, masterKey);
 
       // 5. Send to Server
-      const res = await fetch("http://localhost:5000/heir/auth/verify-keys", {
+      const res = await fetch("/api/heir/auth/verify-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -69,10 +69,12 @@ export default function HeirVerify() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
       <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Heir Verification</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">
+          Heir Verification
+        </h2>
         <p className="mb-4 text-gray-400 text-sm text-center">
-          Create a Master Password. This will be used to encrypt your private key.
-          You MUST NOT forget this password, or you will lose access.
+          Create a Master Password. This will be used to encrypt your private
+          key. You MUST NOT forget this password, or you will lose access.
         </p>
         <form onSubmit={handleVerification} className="space-y-4">
           <div>

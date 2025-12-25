@@ -13,7 +13,7 @@ export default function Heir2FASetup() {
     // Fetch QR Code
     const fetchQrCode = async () => {
       try {
-        const res = await fetch("http://localhost:5000/heir/auth/2fa/setup", {
+        const res = await fetch("/api/heir/auth/2fa/setup", {
           method: "POST",
         });
         const data = await res.json();
@@ -34,7 +34,7 @@ export default function Heir2FASetup() {
   const handleVerify = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5000/heir/auth/2fa/verify", {
+      const res = await fetch("/api/heir/auth/2fa/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
@@ -51,7 +51,8 @@ export default function Heir2FASetup() {
     }
   };
 
-  if (loading) return <div className="text-white text-center mt-10">Loading...</div>;
+  if (loading)
+    return <div className="text-white text-center mt-10">Loading...</div>;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">

@@ -29,12 +29,8 @@ router.post("/login", heirLogin);
 router.post("/logout", heirLogout);
 
 // Heir Verification (Master Password & Key Generation)
-// This likely needs authentication (Heir must be logged in)
-// Heir Verification (Master Password & Key Generation)
-// This likely needs authentication (Heir must be logged in)
 router.post("/verify-keys", auth, verifyHeirAndGenerateKeys);
 
-// Heir 2FA Setup
 // Heir 2FA Setup
 router.post("/2fa/setup", auth, setupHeirTwoFactor);
 

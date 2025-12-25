@@ -11,7 +11,7 @@ export default function HeirsPage() {
 
   const fetchHeirs = async () => {
     try {
-      const res = await authFetch("http://localhost:5000/user/heirs");
+      const res = await authFetch("/api/user/heirs");
       const data = await res.json();
       if (data.success) {
         setHeirs(data.heirs);
@@ -29,7 +29,7 @@ export default function HeirsPage() {
     if (!email) return;
     setLoading(true);
     try {
-      const res = await authFetch("http://localhost:5000/user/link-heir", {
+      const res = await authFetch("/api/user/link-heir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -85,19 +85,30 @@ export default function HeirsPage() {
           ) : (
             <ul>
               {heirs.map((heir) => (
-                <li key={heir.id} className="border-b border-gray-700 py-4 last:border-0">
+                <li
+                  key={heir.id}
+                  className="border-b border-gray-700 py-4 last:border-0"
+                >
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-bold">{heir.name}</p>
                       <p className="text-sm text-gray-400">{heir.email}</p>
                     </div>
                     <div className="text-right">
-                        <span className={`px-2 py-1 rounded text-xs ${heir.isVerified ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'}`}>
-                            {heir.isVerified ? "Verified" : "Pending Verification"}
-                        </span>
-                        {heir.isVerified && (
-                            <p className="text-xs text-gray-500 mt-1">Public Key Available</p>
-                        )}
+                      <span
+                        className={`px-2 py-1 rounded text-xs ${
+                          heir.isVerified
+                            ? "bg-green-900 text-green-300"
+                            : "bg-yellow-900 text-yellow-300"
+                        }`}
+                      >
+                        {heir.isVerified ? "Verified" : "Pending Verification"}
+                      </span>
+                      {heir.isVerified && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Public Key Available
+                        </p>
+                      )}
                     </div>
                   </div>
                 </li>

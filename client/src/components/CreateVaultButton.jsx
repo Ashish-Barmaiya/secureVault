@@ -1,7 +1,7 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import {
   generateSalt,
@@ -42,10 +42,10 @@ export default function CreateVaultButton({ userId }) {
     if (open) {
       const fetchHeirs = async () => {
         try {
-          const res = await authFetch("http://localhost:5000/user/heirs");
+          const res = await authFetch("/api/user/heirs");
           const data = await res.json();
           if (data.success) {
-            setHeirs(data.heirs.filter(h => h.isVerified && h.publicKey));
+            setHeirs(data.heirs.filter((h) => h.isVerified && h.publicKey));
           }
         } catch (error) {
           console.error("Failed to fetch heirs", error);
@@ -87,7 +87,10 @@ export default function CreateVaultButton({ userId }) {
         const heirKeys = {};
         for (const heir of heirs) {
           try {
-            const encryptedForHeir = await encryptVaultKeyWithHeirPublicKey(vaultKey, heir.publicKey);
+            const encryptedForHeir = await encryptVaultKeyWithHeirPublicKey(
+              vaultKey,
+              heir.publicKey
+            );
             heirKeys[heir.id] = encryptedForHeir;
           } catch (err) {
             console.error(`Failed to encrypt for heir ${heir.email}`, err);
