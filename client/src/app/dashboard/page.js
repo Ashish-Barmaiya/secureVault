@@ -8,10 +8,30 @@ import { ShieldCheck, Lock, Vault, Users, Plus, Scan } from "lucide-react";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import TwoFactorStatusCard from "@/components/TwoFactorStatusCard";
 import VaultAccessSection from "@/components/VaultAccessSection";
+import { authFetch } from "@/utils/authFetch";
 
 export default function DashboardPage() {
   const user = useSelector((state) => state.user.user);
   const router = useRouter();
+  const [heirs, setHeirs] = useState([]);
+
+  useEffect(() => {
+    const fetchHeirs = async () => {
+      try {
+        const res = await authFetch("/api/user/heirs");
+        const data = await res.json();
+        if (data.success) {
+          setHeirs(data.heirs);
+        }
+      } catch (err) {
+        console.error("Error fetching heirs:", err);
+      }
+    };
+
+    if (user) {
+      fetchHeirs();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) {
@@ -85,9 +105,7 @@ export default function DashboardPage() {
                 <Users className="text-purple-400 h-5 w-5" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-white">
-              {user?.heirs?.length || "0"}
-            </div>
+            <div className="text-3xl font-bold text-white">{heirs.length}</div>
           </div>
 
           <div className="bg-[#1e293b]/50 border border-slate-700/50 p-5 rounded-2xl shadow-sm flex flex-col gap-3 backdrop-blur-sm hover:bg-[#1e293b]/70 transition-colors">
@@ -156,20 +174,38 @@ export default function DashboardPage() {
                 + Add
               </button>
             </div>
-            <div className="border border-slate-700/50 bg-slate-800/30 p-4 rounded-xl mb-3 hover:border-slate-600 transition-colors">
-              <div className="flex justify-between items-center mb-1">
-                <div>
-                  <p className="font-medium text-slate-200">Sarah Johnson</p>
-                  <p className="text-sm text-slate-500">Spouse</p>
+
+            {heirs.length > 0 ? (
+              heirs.map((heir) => (
+                <div
+                  key={heir.id}
+                  className="border border-slate-700/50 bg-slate-800/30 p-4 rounded-xl mb-3 hover:border-slate-600 transition-colors"
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <div>
+                      <p className="font-medium text-slate-200">{heir.name}</p>
+                      <p className="text-sm text-slate-500">{heir.email}</p>
+                    </div>
+                    <span
+                      className={`text-xs px-2.5 py-1 rounded-full border ${
+                        heir.linkStatus === "LINKED"
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                      }`}
+                    >
+                      {heir.linkStatus === "LINKED" ? "Linked" : "Pending"}
+                    </span>
+                  </div>
+                  {/* <p className="text-xs text-slate-500 mt-2">
+                    Last contact: 2 days ago
+                  </p> */}
                 </div>
-                <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  verified
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-2">
-                Last contact: 2 days ago
+              ))
+            ) : (
+              <p className="text-slate-500 text-sm text-center py-4">
+                No heirs added yet.
               </p>
-            </div>
+            )}
           </div>
 
           <div className="bg-[#1e293b]/50 border border-slate-700/50 p-6 rounded-2xl shadow-sm md:col-span-2 backdrop-blur-sm">

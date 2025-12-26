@@ -36,7 +36,9 @@ export const initializeHeirSignUp = async (req, res) => {
     // Send OTP
     const sent = await sendOtpViaEmail(email, otp);
     if (!sent) {
-      return res.status(500).json({ success: false, message: "Error sending email" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Error sending email" });
     }
 
     // Store OTP in session
@@ -63,7 +65,9 @@ export const verifyHeirOtpAndCreate = async (req, res) => {
   const heirData = req.session.heirDataInSession;
 
   if (!otpData || !heirData) {
-    return res.status(400).json({ success: false, message: "Session expired or invalid" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Session expired or invalid" });
   }
 
   if (Date.now() > otpData.expiresAt) {
@@ -78,7 +82,9 @@ export const verifyHeirOtpAndCreate = async (req, res) => {
     const hashedPassword = await bcrypt.hash(heirData.password, saltRounds);
 
     // Check if heir exists (invited)
-    let heir = await prisma.heir.findFirst({ where: { email: heirData.email } });
+    let heir = await prisma.heir.findFirst({
+      where: { email: heirData.email },
+    });
 
     if (heir) {
       // Update existing heir
@@ -124,18 +130,26 @@ export const heirLogin = async (req, res) => {
   try {
     const heir = await prisma.heir.findFirst({ where: { email } });
     if (!heir || !heir.passwordHash) {
-      return res.status(404).json({ success: false, message: "Heir not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Heir not found" });
     }
 
     const isMatch = await bcrypt.compare(password, heir.passwordHash);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: "Invalid password" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid password" });
     }
 
     // Generate tokens (Assuming generateTokens handles payload structure or we manually do it)
     // If generateTokens expects a user object with id and email:
-    const tokens = generateTokens({ id: heir.id, email: heir.email, role: "heir" }); 
-    // Note: generateTokens implementation in utils might need adjustment if it strictly expects 'user' role or similar. 
+    const tokens = generateTokens({
+      id: heir.id,
+      email: heir.email,
+      role: "heir",
+    });
+    // Note: generateTokens implementation in utils might need adjustment if it strictly expects 'user' role or similar.
     // But usually it just signs the payload. I'll assume it works or I'll check it.
 
     res.cookie("accessToken", tokens.accessToken, {
@@ -181,7 +195,9 @@ export const verifyHeirAndGenerateKeys = async (req, res) => {
   const { publicKey, encryptedPrivateKey, salt } = req.body;
 
   if (!publicKey || !encryptedPrivateKey || !salt) {
-    return res.status(400).json({ success: false, message: "Missing required fields" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing required fields" });
   }
 
   try {
@@ -191,17 +207,23 @@ export const verifyHeirAndGenerateKeys = async (req, res) => {
     const { ciphertext, iv } = encryptVaultKey(encryptedPrivateKey);
     const serverEncryptedPrivateKey = JSON.stringify({ ciphertext, iv });
 
+    // Server-side encryption for the salt
+    const serverEncryptedSalt = encryptVaultKey(salt);
+
     await prisma.heir.update({
       where: { id: heirId },
       data: {
         publicKey,
         encryptedPrivateKey: serverEncryptedPrivateKey,
-        salt,
+        salt: JSON.stringify(serverEncryptedSalt), // Server-encrypted
         isVerified: true, // Mark as verified now that keys are set up
       },
     });
 
-    return res.status(200).json({ success: true, message: "Heir verified and keys stored successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Heir verified and keys stored successfully",
+    });
   } catch (error) {
     console.error("Error verifying heir keys:", error);
     return res.status(500).json({ success: false, message: error.message });
@@ -216,11 +238,16 @@ export const setupHeirTwoFactor = async (req, res) => {
   try {
     const heir = await prisma.heir.findUnique({ where: { id: heirId } });
     if (heir.twoFactorEnabled) {
-      return res.status(400).json({ success: false, message: "2FA already enabled" });
+      return res
+        .status(400)
+        .json({ success: false, message: "2FA already enabled" });
     }
 
-    const secret = speakeasy.generateSecret({ name: "SecureVault Heir", length: 20 });
-    
+    const secret = speakeasy.generateSecret({
+      name: "SecureVault Heir",
+      length: 20,
+    });
+
     // Save secret temporarily or permanently? User flow saves it.
     await prisma.heir.update({
       where: { id: heirId },
@@ -258,7 +285,9 @@ export const verifyHeirTwoFactor = async (req, res) => {
     });
 
     if (!isVerified) {
-      return res.status(400).json({ success: false, message: "Invalid 2FA code" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid 2FA code" });
     }
 
     await prisma.heir.update({
@@ -286,10 +315,19 @@ export const getHeirMe = async (req, res) => {
         isVerified: true,
         twoFactorEnabled: true,
         accessLevel: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
-    if (!heir) return res.status(404).json({ success: false, message: "Heir not found" });
+    if (!heir)
+      return res
+        .status(404)
+        .json({ success: false, message: "Heir not found" });
 
     return res.status(200).json({ success: true, heir });
   } catch (error) {

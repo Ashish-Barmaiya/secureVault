@@ -13,7 +13,12 @@ const createVault = async (req, res) => {
     const userId = req.user.id;
 
     // get data from request body
-    const { encryptedVaultKey, encryptedRecoveryKey, salt, encryptedVaultKeyByHeir } = req.body;
+    const {
+      encryptedVaultKey,
+      encryptedRecoveryKey,
+      salt,
+      encryptedVaultKeyByHeir,
+    } = req.body;
     if (!userId || !encryptedVaultKey || !encryptedRecoveryKey || !salt) {
       return res
         .status(400)
@@ -47,14 +52,24 @@ const createVault = async (req, res) => {
     // encrypt recovery key
     const serverEncryptedRecoveryKey = encryptVaultKey(encryptedRecoveryKey);
 
+    // encrypt heir vault keys (if present)
+    let serverEncryptedHeirKeys = null;
+    if (encryptedVaultKeyByHeir) {
+      const heirKeysEncryption = encryptVaultKey(encryptedVaultKeyByHeir);
+      serverEncryptedHeirKeys = JSON.stringify(heirKeysEncryption);
+    }
+
+    // encrypt salt (server-side only - client-side would create chicken-egg problem)
+    const serverEncryptedSalt = encryptVaultKey(salt);
+
     // create vault
     await prisma.vault.create({
       data: {
         userId,
         encryptedVaultKey: JSON.stringify({ ciphertext, iv }),
         encryptedRecoveryKey: JSON.stringify(serverEncryptedRecoveryKey),
-        encryptedVaultKeyByHeir, // Store as is (already encrypted by client)
-        salt,
+        encryptedVaultKeyByHeir: serverEncryptedHeirKeys, // Double-encrypted: client RSA + server AES
+        salt: JSON.stringify(serverEncryptedSalt), // Server-encrypted
       },
     });
 
@@ -95,7 +110,7 @@ const unlockVault = async (req, res) => {
     const userId = req.user.id;
 
     // check if user exists
-    const user   = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user)
       return res
         .status(404)
@@ -113,6 +128,13 @@ const unlockVault = async (req, res) => {
     const { ciphertext, iv } = JSON.parse(vault.encryptedVaultKey);
     const decryptedVaultKey = decryptVaultKey(ciphertext, iv);
 
+    // decrypt salt
+    const encryptedSaltData = JSON.parse(vault.salt);
+    const decryptedSalt = decryptVaultKey(
+      encryptedSaltData.ciphertext,
+      encryptedSaltData.iv
+    );
+
     // return success response with vault data
     console.log("Vault unlocked successfully", decryptedVaultKey);
     return res.status(200).json({
@@ -120,7 +142,7 @@ const unlockVault = async (req, res) => {
       message: "Vault unlocked successfully",
       vault: {
         encryptedVaultKey: decryptedVaultKey,
-        salt: vault.salt,
+        salt: decryptedSalt, // Decrypted salt returned to client
       },
     });
   } catch (error) {
