@@ -153,3 +153,52 @@ export async function decryptAssetData({ ciphertext, iv }, vaultKey) {
 
   return new TextDecoder().decode(decrypted);
 }
+
+// GENERATE_UNLOCK_ATTESTATION (VUA)
+/**
+ * CRYPTOGRAPHIC BOUNDARY: This proves the user successfully decrypted their vault.
+ * Server cannot generate this without the genuine vaultKey.
+ *
+ * Generate vault unlock attestation using AES-GCM encryption.
+ * Binds attestation to both challenge AND unlockCounter for replay protection.
+ *
+ * @param {string} challenge - Server-issued random challenge (hex string)
+ * @param {number} unlockCounter - Current vault unlock counter from server
+ * @param {string} vaultKey - Decrypted vault key (Base64)
+ * @returns {Promise<{ciphertext: string, iv: string}>} Attestation object
+ */
+export async function generateUnlockAttestation(
+  challenge,
+  unlockCounter,
+  vaultKey
+) {
+  try {
+    // Bind attestation to both challenge AND counter (replay protection)
+    const plaintext = challenge + "||" + unlockCounter.toString();
+
+    // Import vaultKey as CryptoKey for AES-GCM
+    const key = await importKeyFromVaultKey(vaultKey);
+
+    // Generate random IV for AES-GCM
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+
+    // Encrypt plaintext
+    const encoder = new TextEncoder();
+    const data = encoder.encode(plaintext);
+
+    const encrypted = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      data
+    );
+
+    // Return attestation as base64-encoded ciphertext and IV
+    return {
+      ciphertext: arrayBufferToBase64(encrypted),
+      iv: arrayBufferToBase64(iv),
+    };
+  } catch (error) {
+    console.error("❌ Error generating unlock attestation:", error);
+    throw new Error("Failed to generate unlock attestation");
+  }
+}

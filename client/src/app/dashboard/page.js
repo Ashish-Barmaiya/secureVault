@@ -8,6 +8,7 @@ import { ShieldCheck, Lock, Vault, Users, Plus, Scan } from "lucide-react";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import TwoFactorStatusCard from "@/components/TwoFactorStatusCard";
 import VaultAccessSection from "@/components/VaultAccessSection";
+import LivenessStatus from "@/components/LivenessStatus";
 import { authFetch } from "@/utils/authFetch";
 
 export default function DashboardPage() {
@@ -138,6 +139,9 @@ export default function DashboardPage() {
 
         {/* Vault Access Section */}
         <VaultAccessSection userId={user?.id} />
+
+        {/* Liveness Status Widget (Dead Man's Switch) */}
+        {user?.vaultCreated && <LivenessStatus />}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -155,4 +155,71 @@ const unlockVault = async (req, res) => {
   }
 };
 
-export { createVault, unlockVault };
+// GET LIVENESS STATUS
+const getLivenessStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Fetch user to get inactivity period
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { inactivityPeriod: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Fetch vault with liveness data
+    const vault = await prisma.vault.findUnique({
+      where: { userId },
+      select: {
+        state: true,
+        lastSuccessfulUnlockAt: true,
+        missedIntervals: true,
+        graceStartedAt: true,
+        vaultUnlockCounter: true,
+      },
+    });
+
+    if (!vault) {
+      return res.status(404).json({
+        success: false,
+        message: "Vault not found",
+      });
+    }
+
+    // Calculate next check-in date
+    let nextCheckDate = null;
+    if (vault.lastSuccessfulUnlockAt) {
+      nextCheckDate = new Date(
+        vault.lastSuccessfulUnlockAt.getTime() +
+          user.inactivityPeriod * 24 * 60 * 60 * 1000
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      liveness: {
+        state: vault.state,
+        lastSuccessfulUnlockAt: vault.lastSuccessfulUnlockAt,
+        missedIntervals: vault.missedIntervals,
+        graceStartedAt: vault.graceStartedAt,
+        nextCheckDate,
+        inactivityPeriod: user.inactivityPeriod,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error fetching liveness status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+export { createVault, unlockVault, getLivenessStatus };

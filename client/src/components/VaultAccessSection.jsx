@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { setVaultKey } from "@/store/vaultSlice";
-import VaultUnlockDialog from "./VaultUnlockDialog";
+import EnhancedVaultUnlockDialog from "./EnhancedVaultUnlockDialog";
 import { Vault, Lock, Unlock } from "lucide-react";
 import { deriveMasterKey, decryptVaultKey } from "@/utils/vaultCrypto";
 import CreateVaultButton from "@/components/CreateVaultButton";
@@ -15,6 +15,8 @@ export default function VaultAccessSection({ userId }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [failureCount, setFailureCount] = useState(0);
+  const [vuaStatus, setVuaStatus] = useState(null); // "success", "failed", null
 
   const user = useSelector((state) => state.user.user);
   const vaultKey = useSelector((state) => state.vault.vaultKey);
@@ -27,15 +29,47 @@ export default function VaultAccessSection({ userId }) {
       router.push("/dashboard/vault");
     } else {
       setError(null);
+      setVuaStatus(null);
       setIsDialogOpen(true);
     }
   };
 
-  const handleUnlock = async (password) => {
+  const handleUnlock = async (password, setCurrentStep) => {
     try {
       setLoading(true);
       setError(null);
+      setVuaStatus(null);
 
+      // ============================================================
+      // STEP 1: Fetch Challenge (VUA)
+      // ============================================================
+      setCurrentStep("Fetching cryptographic challenge...");
+      let challengeId, challenge, unlockCounter;
+
+      try {
+        const challengeRes = await authFetch("/api/dashboard/vault/challenge", {
+          method: "POST",
+        });
+
+        if (!challengeRes.ok) {
+          console.warn(
+            "⚠️ Challenge fetch failed (VUA will be skipped):",
+            await challengeRes.text()
+          );
+        } else {
+          const challengeData = await challengeRes.json();
+          challengeId = challengeData.challengeId;
+          challenge = challengeData.challenge;
+          unlockCounter = challengeData.unlockCounter;
+        }
+      } catch (err) {
+        console.warn("⚠️ Challenge fetch error (VUA will be skipped):", err);
+      }
+
+      // ============================================================
+      // STEP 2: Fetch Encrypted Vault Data from Server
+      // ============================================================
+      setCurrentStep("Retrieving encrypted vault data...");
       const res = await authFetch("/api/dashboard/vault/unlock-vault");
 
       if (!res.ok) {
@@ -50,24 +84,107 @@ export default function VaultAccessSection({ userId }) {
         throw new Error("Incomplete vault data");
       }
 
+      // ============================================================
+      // STEP 3: Client-Side Decryption (CRITICAL SECURITY BOUNDARY)
+      // ============================================================
+      setCurrentStep("Deriving master key from password...");
+      await new Promise((resolve) => setTimeout(resolve, 300)); // Brief pause for UX
       const masterKey = deriveMasterKey(password, salt);
+
+      setCurrentStep("Decrypting vault key...");
+      await new Promise((resolve) => setTimeout(resolve, 300));
       const decryptedKey = decryptVaultKey(encryptedVaultKey, masterKey);
 
       if (!decryptedKey || decryptedKey.length < 10) {
+        // CLIENT-SIDE DECRYPTION FAILED
+        setCurrentStep("Reporting failed unlock attempt...");
+
+        // Report failure for rate limiting (does NOT update liveness)
+        try {
+          const failureRes = await authFetch(
+            "/api/dashboard/vault/unlock-failed",
+            {
+              method: "POST",
+            }
+          );
+
+          if (failureRes.ok) {
+            const failureData = await failureRes.json();
+            setFailureCount(failureData.failureCount || 0);
+          }
+        } catch (err) {
+          console.warn("Failed to report unlock failure:", err);
+        }
+
         throw new Error("Incorrect password or corrupted vault key");
       }
 
-      // Store the decrypted vault key in Redux
-      console.log("Decrypted vault key:", decryptedKey);
-
+      // ============================================================
+      // STEP 4: VAULT UNLOCKED! Store key and open vault immediately
+      // ============================================================
+      setCurrentStep("Vault unlocked! Opening...");
+      console.log("✅ Vault decrypted successfully");
       dispatch(setVaultKey(decryptedKey));
+
+      // Reset failure count on successful unlock
+      setFailureCount(0);
+
       setIsDialogOpen(false);
-      router.push("/dashboard/vault"); // Redirect to vault page after unlocking
+      router.push("/dashboard/vault");
+
+      // ============================================================
+      // STEP 5: Background VUA Submission (BEST-EFFORT, NON-BLOCKING)
+      // ============================================================
+      if (challengeId && challenge && unlockCounter !== undefined) {
+        setCurrentStep("Submitting liveness proof in background...");
+
+        // Dynamic import to avoid bundling issues
+        import("@/utils/vaultCrypto").then(
+          async ({ generateUnlockAttestation }) => {
+            try {
+              const attestation = await generateUnlockAttestation(
+                challenge,
+                unlockCounter,
+                decryptedKey
+              );
+
+              const attestationRes = await authFetch(
+                "/api/dashboard/vault/unlock-attestation",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    challengeId,
+                    unlockCounter,
+                    attestation,
+                  }),
+                }
+              );
+
+              if (attestationRes.ok) {
+                console.log("✅ Liveness proof submitted successfully");
+                setVuaStatus("success");
+              } else {
+                const errorData = await attestationRes.json();
+                console.warn("⚠️ VUA failed:", errorData.message);
+                setVuaStatus("failed");
+              }
+            } catch (err) {
+              console.warn("⚠️ VUA error:", err);
+              setVuaStatus("failed");
+            }
+          }
+        );
+      } else {
+        console.warn("⚠️ No challenge available - VUA skipped");
+        setVuaStatus("failed");
+      }
     } catch (err) {
-      console.error("Vault unlock error:", err);
+      console.error("❌ Vault unlock error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
+      setCurrentStep("");
     }
   };
 
@@ -105,8 +222,8 @@ export default function VaultAccessSection({ userId }) {
 
               <span
                 className={`mt-2 inline-flex items-center gap-2 text-xs font-semibold px-4 py-1.5 rounded-full border ${
-                  vaultKey 
-                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" 
+                  vaultKey
+                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
                     : "bg-red-500/20 text-red-300 border-red-500/30"
                 }`}
               >
@@ -127,12 +244,14 @@ export default function VaultAccessSection({ userId }) {
         </div>
       </div>
 
-      <VaultUnlockDialog
+      <EnhancedVaultUnlockDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onUnlock={handleUnlock}
         loading={loading}
         error={error}
+        failureCount={failureCount}
+        vuaStatus={vuaStatus}
       />
 
       {vaultKey && (

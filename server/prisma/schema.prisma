@@ -28,11 +28,13 @@ model User {
   inactivityPeriod Int      @default(180)
 
   // Relations
-  vault             Vault?
-  heirs             Heir[]
-  deathVerification DeathVerification[]
-  activityLogs      ActivityLog[]
-  DigitalAsset      DigitalAsset[]
+  vault              Vault?
+  heirs              Heir[]
+  deathVerification  DeathVerification[]
+  activityLogs       ActivityLog[]
+  DigitalAsset       DigitalAsset[]
+  unlockChallenges   UnlockChallenge[]
+  unlockAttestations UnlockAttestation[]
 }
 
 model Vault {
@@ -45,9 +47,22 @@ model Vault {
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
+  // Dead Man's Switch - Liveness Tracking
+  lastSuccessfulUnlockAt DateTime?
+  missedIntervals        Int        @default(0)
+  state                  VaultState @default(ACTIVE)
+  graceStartedAt         DateTime?
+
+  // Dead Man's Switch - Rate Limiting & Security
+  unlockFailureCount Int       @default(0)
+  lastFailureAt      DateTime?
+  vaultUnlockCounter Int       @default(0) // Monotonic counter for replay protection
+
   // Relations
-  user          User           @relation(fields: [userId], references: [id])
-  digitalAssets DigitalAsset[]
+  user               User                @relation(fields: [userId], references: [id])
+  digitalAssets      DigitalAsset[]
+  unlockChallenges   UnlockChallenge[]
+  unlockAttestations UnlockAttestation[]
 }
 
 model Heir {
@@ -203,6 +218,12 @@ enum ActionType {
   VAULT_RESTORED
   VAULT_PASSWORD_RESET
   VAULT_TRANSFERRED
+  VAULT_UNLOCK_SUCCESS
+  VAULT_UNLOCK_FAILED
+  VAULT_STATE_GRACE
+  VAULT_STATE_INHERITABLE
+  VAULT_STATE_CLAIMED
+  VAULT_LIVENESS_RESET
   ASSET_ADDED
   ASSET_UPDATED
   ASSET_DELETED
@@ -232,4 +253,46 @@ enum VerificationStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+// Dead Man's Switch - Vault State Machine
+enum VaultState {
+  ACTIVE // User recently unlocked vault
+  GRACE // Prolonged inactivity detected, warnings issued
+  INHERITABLE // Grace expired, heirs may claim
+  CLAIMED // Vault transferred to heir
+}
+
+// Dead Man's Switch - Challenge-Response for Vault Unlock Attestation
+model UnlockChallenge {
+  id        String   @id @default(uuid())
+  userId    String
+  vaultId   String
+  challenge String // Random 256-bit hex string
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  vault Vault @relation(fields: [vaultId], references: [id])
+
+  @@index([userId, used, expiresAt])
+}
+
+// Dead Man's Switch - Audit trail for unlock attestations
+model UnlockAttestation {
+  id              String   @id @default(uuid())
+  userId          String
+  vaultId         String
+  challengeId     String
+  attestationBlob String // Encrypted challenge (AES-GCM: ciphertext, iv)
+  createdAt       DateTime @default(now())
+  ipAddress       String?
+  userAgent       String?
+
+  user  User  @relation(fields: [userId], references: [id])
+  vault Vault @relation(fields: [vaultId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([vaultId, createdAt])
 }
