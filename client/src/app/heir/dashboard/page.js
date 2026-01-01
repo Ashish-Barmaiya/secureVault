@@ -78,7 +78,7 @@ export default function HeirDashboard() {
     <div className="min-h-screen bg-[#0f172a] text-white">
       <HeirNavbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-12">
         <div className="mb-12">
           <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
           <p className="text-slate-400">
@@ -200,19 +200,65 @@ export default function HeirDashboard() {
         <h2 className="text-xl font-bold text-white mb-6">Available Vaults</h2>
 
         {/* Empty State */}
-        <div className="bg-slate-900/30 border border-slate-800 border-dashed rounded-2xl p-12 text-center">
-          <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-500">
-            <Vault className="w-8 h-8" />
+        {heirData?.user?.vault ? (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+                  <Vault className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white">
+                    {heirData.user.name}'s Vault
+                  </h3>
+                  <p className="text-sm text-slate-400">
+                    Status:{" "}
+                    <span
+                      className={`font-medium ${
+                        heirData.user.vault.state === "INHERITABLE"
+                          ? "text-green-400"
+                          : heirData.user.vault.state === "CLAIMED"
+                          ? "text-blue-400"
+                          : "text-yellow-400"
+                      }`}
+                    >
+                      {heirData.user.vault.state}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              {(heirData.user.vault.state === "INHERITABLE" ||
+                heirData.user.vault.state === "CLAIMED") && (
+                <Link
+                  href={
+                    heirData.user.vault.state === "CLAIMED"
+                      ? "/heir/vault"
+                      : "/heir/claim"
+                  }
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  {heirData.user.vault.state === "CLAIMED"
+                    ? "Access Vault"
+                    : "Claim Vault"}
+                </Link>
+              )}
+            </div>
           </div>
-          <h3 className="text-lg font-medium text-white mb-2">
-            No Vaults Assigned Yet
-          </h3>
-          <p className="text-slate-400 max-w-md mx-auto">
-            When a user designates you as an heir and grants access to their
-            vault, it will appear here. Ensure your email matches the one
-            provided by the vault owner.
-          </p>
-        </div>
+        ) : (
+          <div className="bg-slate-900/30 border border-slate-800 border-dashed rounded-2xl p-12 text-center">
+            <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-500">
+              <Vault className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-medium text-white mb-2">
+              No Vaults Assigned Yet
+            </h3>
+            <p className="text-slate-400 max-w-md mx-auto">
+              When a user designates you as an heir and grants access to their
+              vault, it will appear here. Ensure your email matches the one
+              provided by the vault owner.
+            </p>
+          </div>
+        )}
       </main>
 
       <HeirTwoFactorAuthModal

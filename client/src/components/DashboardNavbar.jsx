@@ -116,13 +116,17 @@ export default function DashboardNavbar() {
           </button>
 
           {/* Title - centered on all screens */}
+          {/* Title */}
           <Link
             href="/"
-            className="flex items-center gap-2 hover:opacity-80 transition mx-auto md:mx-0 group"
+            className="flex items-center gap-2 hover:opacity-80 transition group"
           >
-            <Vault className="h-8 w-8 text-blue-500 group-hover:text-blue-400 transition-colors hidden sm:block" />
-            <div className="text-xl sm:text-2xl font-bold text-white">
-              Secure<span className="text-blue-500 group-hover:text-blue-400 transition-colors">Vault</span>
+            <Vault className="h-8 w-8 text-blue-500 group-hover:text-blue-400 transition-colors" />
+            <div className="text-2xl font-bold text-white">
+              Secure
+              <span className="text-blue-500 group-hover:text-blue-400 transition-colors">
+                Vault
+              </span>
             </div>
           </Link>
 

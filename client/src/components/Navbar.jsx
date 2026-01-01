@@ -114,7 +114,8 @@ export default function Navbar() {
         setOpen(false);
         toast.success("Login successful");
       } else {
-        toast.error("Login failed");
+        const errorData = await res.json();
+        toast.error(errorData.message || "Login failed");
       }
     } catch (err) {
       console.error(err);
@@ -130,16 +131,21 @@ export default function Navbar() {
   };
 
   return (
-    <header 
+    <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-[#0f172a]/80 backdrop-blur-md border-b border-slate-800 py-4" : "bg-transparent py-6"
+        scrolled
+          ? "bg-[#0f172a]/80 backdrop-blur-md border-b border-slate-800 py-4"
+          : "bg-transparent py-6"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-8 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 group">
           <Vault className="h-8 w-8 text-blue-500 group-hover:text-blue-400 transition-colors" />
           <div className="text-2xl font-bold text-white">
-            Secure<span className="text-blue-500 group-hover:text-blue-400 transition-colors">Vault</span>
+            Secure
+            <span className="text-blue-500 group-hover:text-blue-400 transition-colors">
+              Vault
+            </span>
           </div>
         </Link>
 
@@ -200,8 +206,8 @@ export default function Navbar() {
                 </Dialog.Trigger>
 
                 <Dialog.Portal>
-                  <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
-                  <Dialog.Content className="fixed z-50 top-1/2 left-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 bg-[#0f172a] rounded-2xl shadow-2xl border border-slate-800 p-8">
+                  <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]" />
+                  <Dialog.Content className="fixed z-[60] top-1/2 left-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 bg-[#0f172a] rounded-2xl shadow-2xl border border-slate-800 p-8">
                     <Dialog.Title className="text-2xl font-bold text-white text-center mb-8">
                       Welcome Back
                     </Dialog.Title>

@@ -64,6 +64,8 @@ app.use("/dashboard/vault/asset", assetRouter);
 app.use("/heir/auth", heirAuthRouter);
 app.use("/user", userRouter);
 app.use("/heir", heirRouter);
+import heirVaultRouter from "./routes/heir.vault.router.js";
+app.use("/heir/vault", heirVaultRouter);
 
 // Initialize CRON jobs (Dead Man's Switch)
 import "./cron.js";

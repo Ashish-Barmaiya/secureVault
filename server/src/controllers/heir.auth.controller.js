@@ -319,6 +319,12 @@ export const getHeirMe = async (req, res) => {
           select: {
             name: true,
             email: true,
+            vault: {
+              select: {
+                id: true,
+                state: true,
+              },
+            },
           },
         },
       },

@@ -74,6 +74,11 @@ export default function VaultAccessSection({ userId }) {
 
       if (!res.ok) {
         const errorData = await res.json();
+        if (res.status === 403) {
+          throw new Error(
+            "Access Denied: This vault has been transferred to your heir and is no longer accessible."
+          );
+        }
         throw new Error(errorData.error || "Unlock failed");
       }
 

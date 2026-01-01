@@ -95,6 +95,37 @@ export function decryptVaultKey(encryptedData, decryptionKey) {
   }
 }
 
+// DECRYPT_TEXT_DATA
+/**
+ * Decrypts text data (like private key strings) that was encrypted with encryptVaultKey.
+ * Unlike decryptVaultKey which returns base64, this returns the raw UTF-8 string.
+ * Use this for data that was already a string before encryption (e.g., base64-encoded keys).
+ */
+export function decryptTextData(encryptedData, decryptionKey) {
+  try {
+    const [ivBase64, ciphertext] = encryptedData.split(":");
+    const iv = CryptoJS.enc.Base64.parse(ivBase64);
+    const key = CryptoJS.enc.Base64.parse(decryptionKey);
+
+    const decrypted = CryptoJS.AES.decrypt(ciphertext, key, {
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7,
+      iv: iv,
+    });
+
+    // Return as UTF-8 string (not base64) - for text data like private key strings
+    const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+
+    if (!plaintext || plaintext.length < 10) {
+      throw new Error("Decryption failed");
+    }
+
+    return plaintext;
+  } catch (error) {
+    return null;
+  }
+}
+
 // Helper to convert base64 to ArrayBuffer and vice versa
 function base64ToArrayBuffer(base64) {
   return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
@@ -135,18 +166,43 @@ export async function encryptAssetData(plainText, vaultKey) {
 }
 
 // DECRYPT_ASSET_DATA_USING_VAULT_KEY
-export async function decryptAssetData({ ciphertext, iv }, vaultKey) {
+export async function decryptAssetData(encryptedData, vaultKey) {
   const key = await importKeyFromVaultKey(vaultKey);
 
-  console.log("🔓 Decrypting with:", ciphertext, iv);
+  let ciphertext, iv;
+
+  // Handle both string format "ciphertext:iv" and object format {iv, ciphertext}
+  if (typeof encryptedData === "string") {
+    [ciphertext, iv] = encryptedData.split(":");
+  } else {
+    ciphertext = encryptedData.ciphertext;
+    iv = encryptedData.iv;
+  }
+
+  console.log("🔓 Decrypting Asset:");
+  console.log("  - Vault Key (first 10):", vaultKey?.substring(0, 10));
+  console.log("  - Vault Key Length:", vaultKey?.length);
+  console.log("  - Raw Input Type:", typeof encryptedData);
+  if (typeof encryptedData === "string")
+    console.log("  - Raw Input String:", encryptedData);
+  console.log("  - Ciphertext Length:", ciphertext?.length);
+  console.log("  - IV Length:", iv?.length);
+  console.log("  - Ciphertext (first 20):", ciphertext?.substring(0, 20));
+  console.log("  - IV (first 20):", iv?.substring(0, 20));
+
+  const ivBuffer = base64ToArrayBuffer(iv);
+  const encryptedBytes = base64ToArrayBuffer(ciphertext);
+
+  console.log("  - IV Buffer Bytes:", ivBuffer.byteLength);
+  console.log("  - Ciphertext Buffer Bytes:", encryptedBytes.byteLength);
 
   const decrypted = await crypto.subtle.decrypt(
     {
       name: "AES-GCM",
-      iv: base64ToArrayBuffer(iv),
+      iv: ivBuffer,
     },
     key,
-    base64ToArrayBuffer(ciphertext)
+    encryptedBytes
   );
 
   console.log("📥 Raw decrypted buffer:", decrypted);
@@ -200,5 +256,111 @@ export async function generateUnlockAttestation(
   } catch (error) {
     console.error("❌ Error generating unlock attestation:", error);
     throw new Error("Failed to generate unlock attestation");
+  }
+}
+
+// GENERATE_HEIR_CLAIM_PROOF
+/**
+ * Generates the proof of possession for the heir claim process.
+ * Encrypts the challenge + heirId using the vaultKey.
+ *
+ * @param {string} challenge - The challenge string from server
+ * @param {string} heirId - The heir's ID
+ * @param {string} vaultKey - The decrypted vault key
+ * @returns {Promise<{ciphertext: string, iv: string}>} The proof object
+ */
+export async function generateHeirClaimProof(challenge, heirId, vaultKey) {
+  try {
+    const plaintext = challenge + "||" + heirId;
+    const key = await importKeyFromVaultKey(vaultKey);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoder = new TextEncoder();
+    const data = encoder.encode(plaintext);
+
+    const encrypted = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      data
+    );
+
+    return {
+      ciphertext: arrayBufferToBase64(encrypted),
+      iv: arrayBufferToBase64(iv),
+    };
+  } catch (error) {
+    console.error("❌ Error generating heir claim proof:", error);
+    throw new Error("Failed to generate claim proof");
+  }
+}
+
+// DECRYPT_RSA (Client-side)
+/**
+ * Decrypts data using RSA Private Key.
+ * Accepts either base64-encoded PKCS8 or PEM format.
+ */
+export async function decryptRSA(encryptedBase64, privateKeyInput) {
+  try {
+    console.log("🔍 DEBUG - decryptRSA function:");
+    console.log(
+      "  - Encrypted data (first 100 chars):",
+      encryptedBase64?.substring(0, 100)
+    );
+    console.log(
+      "  - Private key input (first 200 chars):",
+      privateKeyInput?.substring(0, 200)
+    );
+
+    let binaryDer;
+
+    // Check if input is PEM format or base64 PKCS8
+    if (privateKeyInput.includes("-----BEGIN")) {
+      console.log("  - Format: PEM (with headers)");
+      // PEM format - strip headers
+      const pemHeader = "-----BEGIN PRIVATE KEY-----";
+      const pemFooter = "-----END PRIVATE KEY-----";
+      const pemContents = privateKeyInput
+        .replace(pemHeader, "")
+        .replace(pemFooter, "")
+        .replace(/\s/g, "");
+
+      const binaryDerString = atob(pemContents);
+      binaryDer = new Uint8Array(binaryDerString.length);
+      for (let i = 0; i < binaryDerString.length; i++) {
+        binaryDer[i] = binaryDerString.charCodeAt(i);
+      }
+    } else {
+      console.log("  - Format: Base64 PKCS8 (no headers)");
+      // Base64 PKCS8 format - use directly
+      const binaryDerString = atob(privateKeyInput);
+      binaryDer = new Uint8Array(binaryDerString.length);
+      for (let i = 0; i < binaryDerString.length; i++) {
+        binaryDer[i] = binaryDerString.charCodeAt(i);
+      }
+    }
+
+    // 2. Import Key
+    const key = await window.crypto.subtle.importKey(
+      "pkcs8",
+      binaryDer.buffer,
+      {
+        name: "RSA-OAEP",
+        hash: "SHA-256",
+      },
+      false,
+      ["decrypt"]
+    );
+
+    // 3. Decrypt
+    const encryptedBytes = base64ToArrayBuffer(encryptedBase64);
+    const decryptedBuffer = await window.crypto.subtle.decrypt(
+      { name: "RSA-OAEP" },
+      key,
+      encryptedBytes
+    );
+
+    return new TextDecoder().decode(decryptedBuffer);
+  } catch (error) {
+    console.error("❌ RSA Decryption failed:", error);
+    throw new Error("Failed to decrypt vault key with RSA");
   }
 }

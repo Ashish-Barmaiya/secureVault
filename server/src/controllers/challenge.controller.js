@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import crypto from "crypto";
 import { logActivity } from "../utils/logActivity.js";
+import { validateVaultTransition } from "../utils/vaultState.js";
 
 const prisma = new PrismaClient();
 
@@ -133,6 +134,9 @@ export const submitAttestation = async (req, res) => {
         message: "Invalid unlock counter (replay attack prevented)",
       });
     }
+
+    // CRITICAL: Enforce one-way state transition.
+    validateVaultTransition(vault.state, "ACTIVE");
 
     // All validations passed - update vault liveness
     const updatedVault = await prisma.vault.update({

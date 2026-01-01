@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, X, UserPlus } from "lucide-react";
 import { authFetch } from "@/utils/authFetch";
+import { toast } from "react-toastify";
 
 export default function HeirRequestCard({ request, onRespond }) {
   const [loading, setLoading] = useState(false);
@@ -15,13 +16,14 @@ export default function HeirRequestCard({ request, onRespond }) {
       });
       const data = await res.json();
       if (data.success) {
+        toast.success(accept ? "Request accepted" : "Request rejected");
         onRespond(accept);
       } else {
-        alert(data.message);
+        toast.error(data.message);
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to respond to request");
+      toast.error("Failed to respond to request");
     } finally {
       setLoading(false);
     }

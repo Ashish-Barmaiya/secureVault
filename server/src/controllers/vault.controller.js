@@ -46,6 +46,22 @@ const createVault = async (req, res) => {
         .json({ success: false, message: "2FA is not enabled" });
     }
 
+    // Check if user has a linked and verified heir
+    const heir = await prisma.heir.findFirst({
+      where: {
+        userId: userId,
+        isVerified: true, // Heir must have completed key setup
+      },
+    });
+
+    if (!heir) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "You must link and verify an heir before creating a vault. Please add an heir from your dashboard.",
+      });
+    }
+
     // encrypt vault key
     const { ciphertext, iv } = encryptVaultKey(encryptedVaultKey);
 
@@ -122,6 +138,16 @@ const unlockVault = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Vault not found for this user" });
+    }
+
+    // CRITICAL: Enforce one-way state transition.
+    // If vault is INHERITABLE or CLAIMED, user loses access PERMANENTLY.
+    if (vault.state === "INHERITABLE" || vault.state === "CLAIMED") {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Vault is no longer accessible. It has been transferred to your heir.",
+      });
     }
 
     // decrypt vault key

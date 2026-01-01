@@ -52,6 +52,7 @@ model Vault {
   missedIntervals        Int        @default(0)
   state                  VaultState @default(ACTIVE)
   graceStartedAt         DateTime?
+  claimedAt              DateTime?
 
   // Dead Man's Switch - Rate Limiting & Security
   unlockFailureCount Int       @default(0)

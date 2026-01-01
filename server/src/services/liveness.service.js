@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+import { validateVaultTransition } from "../utils/vaultState.js";
 
 /**
  * DEAD MAN'S SWITCH - LIVENESS SERVICE
@@ -89,6 +90,8 @@ async function processVaultLiveness(vault) {
   if (missedIntervals >= 3 && state === "ACTIVE") {
     console.log(`⚠️  Vault ${vault.id} entering GRACE period`);
 
+    validateVaultTransition(state, "GRACE");
+
     await prisma.vault.update({
       where: { id: vault.id },
       data: {
@@ -126,6 +129,8 @@ async function processVaultLiveness(vault) {
 
     if (daysSinceGrace >= GRACE_PERIOD_DAYS) {
       console.log(`🚨 Vault ${vault.id} transitioning to INHERITABLE`);
+
+      validateVaultTransition(state, "INHERITABLE");
 
       await prisma.vault.update({
         where: { id: vault.id },

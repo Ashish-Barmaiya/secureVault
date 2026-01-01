@@ -24,6 +24,14 @@ const addCryptoWallet = async (req, res) => {
       });
     }
 
+    // CRITICAL: Enforce one-way state transition.
+    if (vault.state === "INHERITABLE" || vault.state === "CLAIMED") {
+      return res.status(403).json({
+        success: false,
+        message: "Vault is read-only. Access denied.",
+      });
+    }
+
     // get the data from the request body
     const { title, publicAddress, network, encryptedData } = req.body;
 
@@ -101,6 +109,14 @@ const getCryptoWallets = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Vault not found" });
+    }
+
+    // CRITICAL: Enforce one-way state transition.
+    if (vault.state === "INHERITABLE" || vault.state === "CLAIMED") {
+      return res.status(403).json({
+        success: false,
+        message: "Vault is no longer accessible.",
+      });
     }
 
     const cryptoWallets = await prisma.cryptoWallet.findMany({

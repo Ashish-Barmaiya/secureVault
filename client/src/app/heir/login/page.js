@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Vault, LogIn, Loader2 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { loginHeir } from "@/store/heirSlice";
+import { toast } from "react-toastify";
 
 export default function HeirLogin() {
   const [email, setEmail] = useState("");
@@ -26,12 +27,13 @@ export default function HeirLogin() {
       const data = await res.json();
       if (data.success) {
         dispatch(loginHeir(data.heir));
-        router.push("/heir/dashboard"); 
+        router.push("/heir/dashboard");
       } else {
-        alert(data.message);
+        toast.error(data.message);
       }
     } catch (error) {
       console.error(error);
+      toast.error("Login failed");
     } finally {
       setLoading(false);
     }
@@ -60,7 +62,9 @@ export default function HeirLogin() {
         <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl">
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Email Address
+              </label>
               <input
                 type="email"
                 value={email}
@@ -72,8 +76,13 @@ export default function HeirLogin() {
             </div>
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-slate-300">Password</label>
-                <Link href="#" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                <label className="block text-sm font-medium text-slate-300">
+                  Password
+                </label>
+                <Link
+                  href="#"
+                  className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -105,7 +114,10 @@ export default function HeirLogin() {
         <div className="mt-6 text-center">
           <p className="text-slate-400">
             Don't have an account?{" "}
-            <Link href="/heir/signup" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+            <Link
+              href="/heir/signup"
+              className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+            >
               Register as Heir
             </Link>
           </p>

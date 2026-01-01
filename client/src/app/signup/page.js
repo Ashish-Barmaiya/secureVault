@@ -3,9 +3,16 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { z } from "zod";
-import { ShieldCheck, Lock, Mail, User, ArrowRight, RefreshCw } from "lucide-react";
+import {
+  ShieldCheck,
+  Lock,
+  Mail,
+  User,
+  ArrowRight,
+  RefreshCw,
+} from "lucide-react";
 
 const signUpSchema = z
   .object({
@@ -203,7 +210,9 @@ export default function SignUpPage() {
           <h1 className="text-2xl font-bold text-white">
             Create Secure Account
           </h1>
-          <p className="text-slate-400 mt-2">Join our security-first platform</p>
+          <p className="text-slate-400 mt-2">
+            Join our security-first platform
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
@@ -223,7 +232,9 @@ export default function SignUpPage() {
                   value={form.name}
                   onChange={handleChange}
                   className={`block w-full pl-10 text-white pr-3 py-3 bg-slate-900/50 border ${
-                    errors.name ? "border-red-500/50 focus:ring-red-500/50" : "border-slate-700 focus:ring-blue-500/50 focus:border-blue-500"
+                    errors.name
+                      ? "border-red-500/50 focus:ring-red-500/50"
+                      : "border-slate-700 focus:ring-blue-500/50 focus:border-blue-500"
                   } rounded-xl focus:outline-none focus:ring-2 transition-all placeholder-slate-600`}
                 />
               </div>
@@ -247,7 +258,9 @@ export default function SignUpPage() {
                   value={form.email}
                   onChange={handleChange}
                   className={`block w-full pl-10 text-white pr-3 py-3 bg-slate-900/50 border ${
-                    errors.email ? "border-red-500/50 focus:ring-red-500/50" : "border-slate-700 focus:ring-blue-500/50 focus:border-blue-500"
+                    errors.email
+                      ? "border-red-500/50 focus:ring-red-500/50"
+                      : "border-slate-700 focus:ring-blue-500/50 focus:border-blue-500"
                   } rounded-xl focus:outline-none focus:ring-2 transition-all placeholder-slate-600`}
                 />
               </div>
@@ -271,7 +284,9 @@ export default function SignUpPage() {
                   value={form.password}
                   onChange={handleChange}
                   className={`block w-full pl-10 pr-10 text-white py-3 bg-slate-900/50 border ${
-                    errors.password ? "border-red-500/50 focus:ring-red-500/50" : "border-slate-700 focus:ring-blue-500/50 focus:border-blue-500"
+                    errors.password
+                      ? "border-red-500/50 focus:ring-red-500/50"
+                      : "border-slate-700 focus:ring-blue-500/50 focus:border-blue-500"
                   } rounded-xl focus:outline-none focus:ring-2 transition-all placeholder-slate-600`}
                 />
                 <button
@@ -407,7 +422,8 @@ export default function SignUpPage() {
                 Verify Your Email
               </h2>
               <p className="text-slate-400 mt-2">
-                Enter the code sent to <span className="text-white font-medium">{form.email}</span>
+                Enter the code sent to{" "}
+                <span className="text-white font-medium">{form.email}</span>
               </p>
             </div>
 
