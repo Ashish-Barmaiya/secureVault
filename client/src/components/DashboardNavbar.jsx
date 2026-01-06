@@ -2,8 +2,14 @@
 
 import { useDispatch, useSelector } from "react-redux";
 import { persistor } from "@/store/store";
-import { Bell, Settings, UserCircle2, Menu } from "lucide-react";
-import { Vault } from "lucide-react";
+import {
+  Bell,
+  Settings,
+  UserCircle2,
+  Menu,
+  AlertCircle,
+  Vault,
+} from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { logout } from "@/store/userSlice";
 import { useRouter } from "next/navigation";
@@ -78,6 +84,14 @@ export default function DashboardNavbar() {
                 <Settings className="w-5 h-5" />
                 Settings
               </button>
+
+              <Link
+                href="/dashboard/audit"
+                className="w-full flex items-center gap-3 text-slate-300 hover:text-white py-3 rounded-lg"
+              >
+                <AlertCircle className="w-5 h-5" />
+                Audit Logs
+              </Link>
 
               <button
                 onClick={handleLogout}
@@ -161,6 +175,11 @@ export default function DashboardNavbar() {
                   <DropdownMenu.Item className="hover:bg-slate-700/50 hover:text-white px-3 py-2 rounded-lg cursor-pointer outline-none transition-colors">
                     Settings
                   </DropdownMenu.Item>
+                  <Link href="/dashboard/audit">
+                    <DropdownMenu.Item className="hover:bg-slate-700/50 hover:text-white px-3 py-2 rounded-lg cursor-pointer outline-none transition-colors">
+                      Audit Logs
+                    </DropdownMenu.Item>
+                  </Link>
                   <DropdownMenu.Separator className="h-px bg-slate-700 my-2" />
                   <DropdownMenu.Item
                     onClick={handleLogout}

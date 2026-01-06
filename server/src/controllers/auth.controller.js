@@ -10,6 +10,7 @@ import { sendOtpViaEmail } from "../utils/otp.js";
 import { generateTokens } from "../utils/generateTokens.js";
 import { logActivity } from "../utils/logActivity.js";
 import { santizeUserDataForDashboard } from "../utils/santizeUserDataForDashboard.js";
+import AuditService from "../services/audit.service.js";
 
 env.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS);
@@ -112,14 +113,33 @@ const verifyOtpAndCreateNewUser = async (req, res) => {
       userDataInSession.password,
       saltRounds
     );
-    // create new user
-    const newUser = await prisma.user.create({
-      data: {
-        email: userDataInSession.email,
-        passwordHash: hashedPassword,
-        name: userDataInSession.name,
-      },
+    // create new user with audit logging
+    const newUser = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: userDataInSession.email,
+          passwordHash: hashedPassword,
+          name: userDataInSession.name,
+        },
+      });
+
+      await AuditService.logAuditIntent(tx, {
+        actorType: "USER",
+        actorId: user.id,
+        targetType: "ACCOUNT",
+        targetId: user.id,
+        eventType: "USER_REGISTERED",
+        eventVersion: 1,
+        payload: {
+          email: user.email,
+          name: user.name,
+          method: "EMAIL_OTP",
+        },
+      });
+
+      return user;
     });
+
     if (!newUser) {
       return res
         .status(500)
@@ -127,13 +147,8 @@ const verifyOtpAndCreateNewUser = async (req, res) => {
     }
     console.log("New user created successfully:", newUser.email);
 
-    // Create activity log for ACCOUNT_CREATED
+    // Legacy log (optional, keeping for now)
     logActivity(req, newUser.id, "ACCOUNT_CREATED");
-    if (logActivity) {
-      console.log("Activity logged successfully for user:", newUser.id);
-    } else {
-      console.error("Failed to log activity for user:", newUser.id);
-    }
 
     // return success
     return res.status(201).json({
@@ -307,6 +322,27 @@ const userLogin = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    // Update lastLogin and log audit in transaction
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { lastLogin: new Date() },
+      });
+
+      await AuditService.logAuditIntent(tx, {
+        actorType: "USER",
+        actorId: user.id,
+        targetType: "ACCOUNT",
+        targetId: user.id,
+        eventType: "USER_LOGIN_SUCCESS",
+        eventVersion: 1,
+        payload: {
+          email: user.email,
+          method: "PASSWORD",
+        },
+      });
     });
 
     console.log("User logged in successfully:", user.email);

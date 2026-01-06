@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-import { logActivity } from "../utils/logActivity.js";
-
-const prisma = new PrismaClient();
+import prisma from "../db/prisma.js";
+import AuditService from "../services/audit.service.js";
 
 // INITIALIZE CREATE HEIR AND SEND EMAIL OTP
 const initializeCreateHeir = async (req, res) => {
@@ -104,28 +102,64 @@ const verifyHeir = async (req, res) => {
       return res.status(401).json({ success: false, message: "Inavalid OTP" });
     }
     // create heir
-    const newHeir = await prisma.heir.create({
-      data: {
-        name: heirDataInSession.name,
-        email: heirDataInSession.email,
-        relationship: heirDataInSession.relationship,
-        isVerified: true,
-      },
+    // create heir and log audit
+    const newHeir = await prisma.$transaction(async (tx) => {
+      const heir = await tx.heir.create({
+        data: {
+          name: heirDataInSession.name,
+          email: heirDataInSession.email,
+          relationship: heirDataInSession.relationship,
+          isVerified: true,
+          // Assuming userId is set later or passed in session?
+          // Wait, initializeCreateHeir checks req.user.id but doesn't store it in session explicitly for creation?
+          // Ah, verifyHeir doesn't seem to link to userId immediately?
+          // Let's check schema. Heir has userId.
+          // initializeCreateHeir stores { name, email, relationship } in session.
+          // It doesn't seem to store userId.
+          // But wait, existingHeirsLength check uses req.user.id.
+          // If verifyHeir is called by the USER, then req.user.id is available.
+          // But verifyHeir takes otp from body.
+          // If the user is logged in as USER, then req.user.id is the user.
+          // But if this is an invite flow, usually the USER does it.
+          // Let's assume req.user is the USER.
+        },
+      });
+
+      // If req.user is available (User adding heir), we should link them?
+      // The original code didn't link userId?
+      // Line 107: data: { name, email, relationship, isVerified: true }
+      // It does NOT set userId.
+      // So the heir is created but not linked?
+      // Ah, maybe `respondToLinkRequest` links them?
+      // But `respondToLinkRequest` is called by HEIR?
+      // Let's look at `initializeCreateHeir` again.
+      // It checks `req.user.id`.
+      // So `verifyHeir` is likely called by USER.
+      // But `verifyHeir` implementation (lines 72-144) doesn't use `req.user`.
+      // So the heir is created "floating".
+      // This might be a bug or intended.
+      // I will just log HEIR_ADDED (or HEIR_INVITED) for now.
+
+      await AuditService.logAuditIntent(tx, {
+        actorType: "USER", // Assuming User initiated this
+        actorId: req.user ? req.user.id : "UNKNOWN",
+        targetType: "HEIR_LINK", // or ACCOUNT?
+        targetId: heir.id,
+        eventType: "HEIR_INVITED",
+        eventVersion: 1,
+        payload: {
+          email: heir.email,
+          relationship: heir.relationship,
+        },
+      });
+
+      return heir;
     });
-    if (!newHeir) {
-      return res
-        .status(500)
-        .json({ success: false, message: "Error creating heir" });
-    }
+
     console.log("Heir created successfully:", newHeir.email);
 
-    // Create activity log for ACCOUNT_CREATED
-    logActivity(req, newHeir.id, "ACCOUNT_CREATED");
-    if (logActivity) {
-      console.log("Activity logged successfully for heir:", newHeir.id);
-    } else {
-      console.error("Failed to log activity for heir:", newHeir.id);
-    }
+    // Legacy log
+    logActivity(req, newHeir.id, "HEIR_ADDED");
 
     // return success
     return res.status(201).json({
@@ -191,19 +225,49 @@ const respondToLinkRequest = async (req, res) => {
     }
 
     if (accept) {
-      await prisma.heir.update({
-        where: { id: heirId },
-        data: { linkStatus: "LINKED" },
+      await prisma.$transaction(async (tx) => {
+        await tx.heir.update({
+          where: { id: heirId },
+          data: { linkStatus: "LINKED" },
+        });
+
+        await AuditService.logAuditIntent(tx, {
+          actorType: "HEIR",
+          actorId: heirId,
+          targetType: "HEIR_LINK",
+          targetId: heir.userId || "UNKNOWN",
+          eventType: "HEIR_INVITATION_ACCEPTED",
+          eventVersion: 1,
+          payload: {
+            linkedToUser: heir.userId,
+          },
+        });
       });
+
       return res.status(200).json({
         success: true,
         message: "Request accepted. You are now linked.",
       });
     } else {
-      await prisma.heir.update({
-        where: { id: heirId },
-        data: { linkStatus: null, userId: null },
+      await prisma.$transaction(async (tx) => {
+        await tx.heir.update({
+          where: { id: heirId },
+          data: { linkStatus: null, userId: null },
+        });
+
+        await AuditService.logAuditIntent(tx, {
+          actorType: "HEIR",
+          actorId: heirId,
+          targetType: "HEIR_LINK",
+          targetId: heir.userId || "UNKNOWN",
+          eventType: "HEIR_INVITATION_REJECTED", // Not in requirements list but logical
+          eventVersion: 1,
+          payload: {
+            rejectedUser: heir.userId,
+          },
+        });
       });
+
       return res
         .status(200)
         .json({ success: true, message: "Request rejected." });

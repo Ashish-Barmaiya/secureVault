@@ -17,7 +17,7 @@ import HeirTwoFactorAuthModal from "@/components/HeirTwoFactorAuthModal";
 import { authFetch } from "@/utils/authFetch";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutHeir, updateHeir } from "@/store/heirSlice";
-import HeirNavbar from "@/components/HeirNavbar";
+
 import HeirKeySetup from "@/components/HeirKeySetup";
 import HeirRequestCard from "@/components/HeirRequestCard";
 
@@ -76,8 +76,6 @@ export default function HeirDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white">
-      <HeirNavbar />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-12">
         <div className="mb-12">
           <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>

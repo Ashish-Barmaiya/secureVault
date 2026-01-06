@@ -9,7 +9,7 @@ import {
   decryptAssetData,
   decryptTextData,
 } from "@/utils/vaultCrypto";
-import { Lock, Unlock, Eye, Copy, AlertTriangle } from "lucide-react";
+import { Lock, Unlock, Eye, Copy, AlertTriangle, Loader2 } from "lucide-react";
 
 export default function InheritedVaultView() {
   const [loading, setLoading] = useState(true);
@@ -19,6 +19,7 @@ export default function InheritedVaultView() {
   const [vaultKey, setVaultKey] = useState(null); // Session-only key
   const [decryptedAssets, setDecryptedAssets] = useState({});
   const [unlocking, setUnlocking] = useState(false);
+  const [currentStep, setCurrentStep] = useState("");
 
   // Fetch encrypted data on mount
   useEffect(() => {
@@ -61,8 +62,14 @@ export default function InheritedVaultView() {
         throw new Error("Missing cryptographic data. Cannot unlock.");
       }
 
+      setCurrentStep("Deriving master key...");
+      await new Promise((resolve) => setTimeout(resolve, 500)); // UX delay
+
       // 1. Derive Heir Master Key
       const heirMasterKey = deriveMasterKey(password, salt);
+
+      setCurrentStep("Decrypting private key...");
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // 2. Decrypt RSA Private Key
       // Use decryptTextData to avoid double-base64 encoding issues for the private key itself
@@ -76,6 +83,8 @@ export default function InheritedVaultView() {
       }
 
       // 3. Decrypt Vault Key
+      setCurrentStep("Decrypting vault key...");
+      await new Promise((resolve) => setTimeout(resolve, 300));
       let decryptedVaultKey = await decryptRSA(
         encryptedVaultKeyForHeir,
         rsaPrivateKeyBase64
@@ -91,6 +100,7 @@ export default function InheritedVaultView() {
       setError(err.message || "Failed to unlock vault. Check your password.");
     } finally {
       setUnlocking(false);
+      setCurrentStep("");
     }
   };
 
@@ -136,7 +146,7 @@ export default function InheritedVaultView() {
   // LOCKED STATE
   if (!vaultKey) {
     return (
-      <div className="max-w-md mx-auto mt-10 pt-32 pb-12 bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700">
+      <div className="max-w-md mx-auto mt-24 pt-16 pb-12 bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700">
         <div className="text-center mb-8">
           <div className="bg-blue-900/30 p-4 rounded-full inline-block mb-4">
             <Lock className="h-8 w-8 text-blue-400" />
@@ -175,13 +185,20 @@ export default function InheritedVaultView() {
           >
             {unlocking ? (
               <div className="flex items-center justify-center gap-2">
-                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                <Loader2 className="animate-spin h-5 w-5" />
                 Processing...
               </div>
             ) : (
               "Unlock Vault"
             )}
           </button>
+
+          {unlocking && currentStep && (
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg flex items-center gap-3 animate-fade-in">
+              <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+              <span className="text-sm text-blue-200">{currentStep}</span>
+            </div>
+          )}
         </form>
       </div>
     );
@@ -189,7 +206,7 @@ export default function InheritedVaultView() {
 
   // UNLOCKED STATE
   return (
-    <div className="max-w-6xl mx-auto mt-8 pt-32 pb-12 px-4">
+    <div className="max-w-6xl mx-auto mt-8 pt-16 pb-12 px-4">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">

@@ -43,7 +43,10 @@ export default function HeirNavbar() {
         <Link href="/" className="flex items-center gap-2 group">
           <Vault className="h-8 w-8 text-blue-500 group-hover:text-blue-400 transition-colors" />
           <div className="text-2xl font-bold text-white">
-            Secure<span className="text-blue-500 group-hover:text-blue-400 transition-colors">Vault</span>
+            Secure
+            <span className="text-blue-500 group-hover:text-blue-400 transition-colors">
+              Vault
+            </span>
             <span className="ml-3 text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20 align-middle">
               HEIR PORTAL
             </span>
@@ -53,7 +56,13 @@ export default function HeirNavbar() {
         {/* Desktop Navigation */}
         <div className="hidden md:flex gap-8 items-center">
           <nav className="flex gap-6">
-             {/* Add any heir specific nav links here if needed */}
+            {/* Add any heir specific nav links here if needed */}
+            <Link
+              href="/heir/dashboard/audit"
+              className="text-slate-300 hover:text-white transition-colors font-medium"
+            >
+              Audit Logs
+            </Link>
           </nav>
 
           <div className="h-5 w-px bg-slate-700"></div>
@@ -93,6 +102,13 @@ export default function HeirNavbar() {
             </div>
 
             <nav className="flex flex-col p-6 space-y-6">
+              <Link
+                href="/heir/dashboard/audit"
+                className="text-slate-300 hover:text-white text-lg font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Audit Logs
+              </Link>
               <div className="pt-8 border-t border-slate-800 space-y-4">
                 <button
                   onClick={() => {

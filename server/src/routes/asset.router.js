@@ -1,14 +1,24 @@
 import express from "express";
 import { auth } from "../middlewares/auth.js";
 import {
-  addCryptoWallet,
-  getCryptoWallets,
+  createAsset,
+  getAssets,
+  updateAsset,
+  deleteAsset,
+  logReveal,
+  logHide,
 } from "../controllers/asset.controller.js";
 
 const router = express.Router();
 
-router.post("/add-crypto-wallet", auth, addCryptoWallet);
+// CRUD
+router.post("/", auth, createAsset);
+router.get("/", auth, getAssets);
+router.put("/:id", auth, updateAsset);
+router.delete("/:id", auth, deleteAsset);
 
-router.get("/crypto-wallet", auth, getCryptoWallets);
+// Audit Logging for Client-side Actions
+router.post("/:id/reveal", auth, logReveal);
+router.post("/:id/hide", auth, logHide);
 
 export default router;

@@ -1,30 +1,29 @@
+import AssetService from "../services/asset.service.js";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const addCryptoWallet = async (req, res) => {
+const createAsset = async (req, res) => {
   try {
-    // get user from request
     const userId = req.user.id;
+    const { type, encryptedPayload } = req.body;
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return res.status(404).json({
+    if (!type || !encryptedPayload) {
+      return res.status(400).json({
         success: false,
-        message: "User not found",
+        message: "Missing required fields: type, encryptedPayload",
       });
     }
 
-    // get vault for the user
+    // Get vault
     const vault = await prisma.vault.findUnique({ where: { userId } });
     if (!vault) {
-      return res.status(404).json({
-        success: false,
-        message: "Vault not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Vault not found" });
     }
 
-    // CRITICAL: Enforce one-way state transition.
+    // Check vault state
     if (vault.state === "INHERITABLE" || vault.state === "CLAIMED") {
       return res.status(403).json({
         success: false,
@@ -32,58 +31,31 @@ const addCryptoWallet = async (req, res) => {
       });
     }
 
-    // get the data from the request body
-    const { title, publicAddress, network, encryptedData } = req.body;
+    const context = {
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    };
 
-    if (
-      !title ||
-      !publicAddress ||
-      !network ||
-      !encryptedData ||
-      typeof encryptedData !== "string" ||
-      encryptedData.length < 20
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Missing or invalid required fields. Ensure vault is unlocked.",
-      });
-    }
-
-    // Start interactive transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Step 1: Create DigitalAsset
-      const digitalAsset = await tx.digitalAsset.create({
-        data: {
-          type: "CRYPTO_WALLET",
-          title,
-          vaultId: vault.id,
-          userId: user.id,
-        },
-      });
-
-      // Step 2: Create CryptoWallet linked to the above asset
-      const cryptoWallet = await tx.cryptoWallet.create({
-        data: {
-          assetId: digitalAsset.id,
-          publicAddress,
-          network,
-          encryptedData,
-        },
-      });
-
-      return { digitalAsset, cryptoWallet };
-    });
-
-    console.log("Crypto wallet added successfully");
+    const asset = await AssetService.createAsset(
+      userId,
+      vault.id,
+      { type, encryptedPayload },
+      context
+    );
 
     return res.status(201).json({
       success: true,
-      message: "Crypto wallet added successfully",
-      data: result,
+      message: "Asset created successfully",
+      data: asset,
     });
   } catch (error) {
-    console.error("Add Crypto Wallet Error:", error);
+    console.error("Create Asset Error:", error);
+    if (error.code === "ASSET_LIMIT_REACHED") {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+      });
+    }
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -92,17 +64,9 @@ const addCryptoWallet = async (req, res) => {
   }
 };
 
-// Get Crypto Wallets
-const getCryptoWallets = async (req, res) => {
+const getAssets = async (req, res) => {
   try {
     const userId = req.user.id;
-
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
 
     const vault = await prisma.vault.findUnique({ where: { userId } });
     if (!vault) {
@@ -111,35 +75,197 @@ const getCryptoWallets = async (req, res) => {
         .json({ success: false, message: "Vault not found" });
     }
 
-    // CRITICAL: Enforce one-way state transition.
-    if (vault.state === "INHERITABLE" || vault.state === "CLAIMED") {
+    // Heirs access via separate route, but if user is accessing:
+    if (vault.state === "CLAIMED") {
+      // Maybe allow view only? Prompt says "HARD DENY if vault.state INHERITABLE, CLAIMED" for /dashboard/vault/asset/*
+      // "Assets are accessed ONLY via: /dashboard/vault/asset/* ... HARD DENY if vault.state ∈ { INHERITABLE, CLAIMED }"
       return res.status(403).json({
         success: false,
-        message: "Vault is no longer accessible.",
+        message: "Vault access denied. Vault is claimed or inheritable.",
       });
     }
 
-    const cryptoWallets = await prisma.cryptoWallet.findMany({
-      where: {
-        asset: {
-          vaultId: vault.id,
-        },
-      },
-    });
+    const assets = await AssetService.getAssets(vault.id);
 
     return res.status(200).json({
       success: true,
-      message: "Crypto wallets fetched successfully",
-      data: cryptoWallets,
+      data: assets,
     });
   } catch (error) {
-    console.error("Get Crypto Wallets Error:", error);
+    console.error("Get Assets Error:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error.message,
     });
   }
 };
 
-export { addCryptoWallet, getCryptoWallets };
+const updateAsset = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { encryptedPayload } = req.body;
+
+    if (!encryptedPayload) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing encryptedPayload",
+      });
+    }
+
+    // Verify ownership
+    const asset = await prisma.asset.findUnique({
+      where: { id },
+      include: { vault: true },
+    });
+
+    if (!asset || asset.vault.userId !== userId) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Asset not found" });
+    }
+
+    // Check vault state
+    if (
+      asset.vault.state === "INHERITABLE" ||
+      asset.vault.state === "CLAIMED"
+    ) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Vault is read-only." });
+    }
+
+    const context = {
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    };
+
+    const updatedAsset = await AssetService.updateAsset(
+      userId,
+      id,
+      { encryptedPayload },
+      context
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Asset updated successfully",
+      data: updatedAsset,
+    });
+  } catch (error) {
+    console.error("Update Asset Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const deleteAsset = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    // Verify ownership
+    const asset = await prisma.asset.findUnique({
+      where: { id },
+      include: { vault: true },
+    });
+
+    if (!asset || asset.vault.userId !== userId) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Asset not found" });
+    }
+
+    if (
+      asset.vault.state === "INHERITABLE" ||
+      asset.vault.state === "CLAIMED"
+    ) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Vault is read-only." });
+    }
+
+    const context = {
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    };
+
+    await AssetService.deleteAsset(userId, id, context);
+
+    return res.status(200).json({
+      success: true,
+      message: "Asset deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete Asset Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const logReveal = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    // Verify ownership (optional but good for security)
+    const asset = await prisma.asset.findUnique({
+      where: { id },
+      include: { vault: true },
+    });
+
+    if (!asset || asset.vault.userId !== userId) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Asset not found" });
+    }
+
+    const context = {
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    };
+
+    await AssetService.logReveal(userId, id, context);
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Log Reveal Error:", error);
+    return res.status(500).json({ success: false });
+  }
+};
+
+const logHide = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    const asset = await prisma.asset.findUnique({
+      where: { id },
+      include: { vault: true },
+    });
+
+    if (!asset || asset.vault.userId !== userId) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Asset not found" });
+    }
+
+    const context = {
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    };
+
+    await AssetService.logHide(userId, id, context);
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Log Hide Error:", error);
+    return res.status(500).json({ success: false });
+  }
+};
+
+export { createAsset, getAssets, updateAsset, deleteAsset, logReveal, logHide };

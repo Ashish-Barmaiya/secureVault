@@ -320,14 +320,7 @@ export const getHeirAssets = async (req, res) => {
           include: {
             vault: {
               include: {
-                digitalAssets: {
-                  include: {
-                    bankAccounts: true,
-                    cryptoWallets: true,
-                    socialMediaAccounts: true,
-                    nfts: true,
-                  },
-                },
+                assets: true,
               },
             },
           },
@@ -384,7 +377,7 @@ export const getHeirAssets = async (req, res) => {
     // Return encrypted assets AND keys
     return res.status(200).json({
       success: true,
-      assets: vault.digitalAssets,
+      assets: vault.assets,
       keys: {
         salt,
         encryptedPrivateKey,

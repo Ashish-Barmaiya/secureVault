@@ -32,9 +32,9 @@ model User {
   heirs              Heir[]
   deathVerification  DeathVerification[]
   activityLogs       ActivityLog[]
-  DigitalAsset       DigitalAsset[]
   unlockChallenges   UnlockChallenge[]
   unlockAttestations UnlockAttestation[]
+  assets             Asset[]
 }
 
 model Vault {
@@ -61,7 +61,7 @@ model Vault {
 
   // Relations
   user               User                @relation(fields: [userId], references: [id])
-  digitalAssets      DigitalAsset[]
+  assets             Asset[]
   unlockChallenges   UnlockChallenge[]
   unlockAttestations UnlockAttestation[]
 }
@@ -118,80 +118,6 @@ enum DocType {
   RELATIONSHIP_PROOF
 }
 
-model DigitalAsset {
-  id        String    @id @default(uuid())
-  type      AssetType
-  title     String
-  vaultId   String
-  vault     Vault     @relation(fields: [vaultId], references: [id])
-  createdAt DateTime  @default(now())
-
-  // 1:N Relationships (One DigitalAsset parent per sub-asset)
-  bankAccounts        BankAccount[]
-  cryptoWallets       CryptoWallet[]
-  socialMediaAccounts SocialMediaAccount[]
-  nfts                NFT[]
-  User                User?                @relation(fields: [userId], references: [id])
-  userId              String?
-
-  @@index([vaultId, type])
-}
-
-enum AssetType {
-  BANK_ACCOUNT
-  CRYPTO_WALLET
-  NFT
-  SOCIAL_MEDIA_ACCOUNT
-}
-
-// Sub-models (allowing duplicates under one DigitalAsset)
-model BankAccount {
-  id            String       @id @default(uuid())
-  encryptedData String // { accountNumber, ifsc, login, password }
-  metadata      Json? // { bankName: "SBI", branch: "Mumbai" }
-  asset         DigitalAsset @relation(fields: [assetId], references: [id])
-  assetId       String // Not unique! One DigitalAsset can group multiple accounts
-
-  @@index([assetId])
-}
-
-model CryptoWallet {
-  id                String       @id @default(uuid())
-  encryptedData     String // JSON.stringify({ privateKey, seedPhrase, ... }), encrypted with vaultKey
-  publicAddress     String // e.g., "0x123..."
-  network           String // e.g., "Ethereum", "Polygon"
-  walletType        String? // e.g., "MetaMask", "Ledger", optional
-  label             String? // e.g., "My ETH Wallet", optional
-  encryptionVersion Int          @default(1) // for future-proofing decryption
-  assetId           String
-  asset             DigitalAsset @relation(fields: [assetId], references: [id])
-
-  @@index([assetId, network])
-}
-
-model NFT {
-  id              String       @id @default(uuid())
-  tokenId         String // Non-encrypted
-  contractAddress String // Non-encrypted
-  encryptedData   String // { walletAccessNotes }
-  metadataUrl     String? // IPFS/OpenSea link
-  asset           DigitalAsset @relation(fields: [assetId], references: [id])
-  assetId         String // Not unique!
-
-  @@index([assetId, contractAddress])
-}
-
-// Social Media (unchanged, already 1:N)
-model SocialMediaAccount {
-  id            String       @id @default(uuid())
-  platform      String // "Twitter", "Facebook"
-  encryptedData String // { username, password }
-  asset         DigitalAsset @relation(fields: [assetId], references: [id])
-  assetId       String // Not unique!
-
-  @@index([assetId, platform])
-}
-
 model ActivityLog {
   id        String     @id @default(uuid())
   action    ActionType
@@ -225,9 +151,11 @@ enum ActionType {
   VAULT_STATE_INHERITABLE
   VAULT_STATE_CLAIMED
   VAULT_LIVENESS_RESET
-  ASSET_ADDED
+  ASSET_CREATED
   ASSET_UPDATED
   ASSET_DELETED
+  ASSET_REVEAL_REQUESTED
+  ASSET_HIDE_REQUESTED
   HEIR_ADDED
   HEIR_REMOVED
   HEIR_UPDATED
@@ -235,6 +163,33 @@ enum ActionType {
   DEATH_VERIFICATION_APPROVED
   DEATH_VERIFICATION_REJECTED
   DEATH_VERIFICATION_UPDATED
+}
+
+model Asset {
+  id               String    @id @default(uuid())
+  vaultId          String
+  type             AssetType
+  encryptedPayload String // Client-side encrypted JSON
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  vault  Vault   @relation(fields: [vaultId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  @@index([vaultId])
+}
+
+enum AssetType {
+  CRYPTO_WALLET
+  SECRET_NOTE
+  BANK_ACCOUNT_INFO
+  INVESTMENT_ACCOUNT_INFO
+  LEGAL_INFO
+  DOCUMENT_REFERENCE
+  RECOVERY_PHRASE
+  EMAIL_ACCOUNT
+  IMPORTANT_NOTE
 }
 
 model DeathVerification {
@@ -296,4 +251,49 @@ model UnlockAttestation {
 
   @@index([userId, createdAt])
   @@index([vaultId, createdAt])
+}
+
+enum ActorType {
+  USER
+  HEIR
+  SYSTEM
+}
+
+enum TargetType {
+  ACCOUNT
+  VAULT
+  ASSET
+  HEIR_LINK
+}
+
+model AuditOutbox {
+  id           String     @id @default(uuid())
+  actorType    ActorType
+  actorId      String?
+  targetType   TargetType
+  targetId     String?
+  eventType    String
+  eventVersion Int
+  payload      Json
+  occurredAt   DateTime   @default(now())
+  processedAt  DateTime?
+  retryCount   Int        @default(0)
+  error        String?
+}
+
+model AuditLog {
+  id         String     @id @default(uuid())
+  actorType  ActorType
+  actorId    String?
+  targetType TargetType
+  targetId   String?
+  eventType  String
+  summary    String?
+  occurredAt DateTime
+  metadata   Json
+
+  @@index([actorId])
+  @@index([targetId])
+  @@index([eventType])
+  @@index([occurredAt])
 }

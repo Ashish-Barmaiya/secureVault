@@ -1,8 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../db/prisma.js";
+import AuditService from "../services/audit.service.js";
 import { encryptVaultKey, decryptVaultKey } from "../utils/encryptVaultKey.js";
 import { logActivity } from "../utils/logActivity.js";
-
-const prisma = new PrismaClient();
 
 // CREATE VAULT
 const createVault = async (req, res) => {
@@ -79,30 +78,38 @@ const createVault = async (req, res) => {
     const serverEncryptedSalt = encryptVaultKey(salt);
 
     // create vault
-    await prisma.vault.create({
-      data: {
-        userId,
-        encryptedVaultKey: JSON.stringify({ ciphertext, iv }),
-        encryptedRecoveryKey: JSON.stringify(serverEncryptedRecoveryKey),
-        encryptedVaultKeyByHeir: serverEncryptedHeirKeys, // Double-encrypted: client RSA + server AES
-        salt: JSON.stringify(serverEncryptedSalt), // Server-encrypted
-      },
+    // create vault and update user in transaction
+    await prisma.$transaction(async (tx) => {
+      const vault = await tx.vault.create({
+        data: {
+          userId,
+          encryptedVaultKey: JSON.stringify({ ciphertext, iv }),
+          encryptedRecoveryKey: JSON.stringify(serverEncryptedRecoveryKey),
+          encryptedVaultKeyByHeir: serverEncryptedHeirKeys,
+          salt: JSON.stringify(serverEncryptedSalt),
+        },
+      });
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { vaultCreated: true },
+      });
+
+      await AuditService.logAuditIntent(tx, {
+        actorType: "USER",
+        actorId: userId,
+        targetType: "VAULT",
+        targetId: vault.id,
+        eventType: "VAULT_CREATED",
+        eventVersion: 1,
+        payload: {
+          hasHeir: !!heir,
+        },
+      });
     });
 
-    // update user
-    await prisma.user.update({
-      where: { id: userId },
-      data: { vaultCreated: true },
-      // TODO: there is no need to have this field. Delete it later OR keep this field and add a new field that keeps count of total vaults user has. (maybe useful for quick query)
-    });
-
-    // log activity
+    // Legacy log
     logActivity(req, userId, "VAULT_CREATED");
-    if (logActivity) {
-      console.log("Activity logged successfully for user:", userId);
-    } else {
-      console.error("Failed to log activity for user:", userId);
-    }
 
     // return success response
     return res.status(201).json({
@@ -160,6 +167,28 @@ const unlockVault = async (req, res) => {
       encryptedSaltData.ciphertext,
       encryptedSaltData.iv
     );
+
+    // Update lastSuccessfulUnlockAt and log audit
+    await prisma.$transaction(async (tx) => {
+      await tx.vault.update({
+        where: { id: vault.id },
+        data: {
+          lastSuccessfulUnlockAt: new Date(),
+          missedIntervals: 0, // Reset missed intervals on success
+          state: "ACTIVE", // Ensure state is ACTIVE
+        },
+      });
+
+      await AuditService.logAuditIntent(tx, {
+        actorType: "USER",
+        actorId: userId,
+        targetType: "VAULT",
+        targetId: vault.id,
+        eventType: "VAULT_UNLOCK_SUCCESS",
+        eventVersion: 1,
+        payload: {},
+      });
+    });
 
     // return success response with vault data
     console.log("Vault unlocked successfully", decryptedVaultKey);
