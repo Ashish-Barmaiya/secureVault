@@ -91,7 +91,7 @@ const AssetList = ({ vaultKey, onAddAsset, onEditAsset }) => {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-black/20 border border-white/10 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-purple-500 appearance-none cursor-pointer"
+              className="pl-10 pr-4 py-2 bg-black/70 border border-white/10 hover:bg-black/70 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-purple-500 appearance-none cursor-pointer"
             >
               {assetTypes.map((type) => (
                 <option key={type} value={type}>
@@ -105,14 +105,14 @@ const AssetList = ({ vaultKey, onAddAsset, onEditAsset }) => {
             onClick={() => {
               setSortBy(sortBy === "createdAt" ? "type" : "createdAt");
             }}
-            className="flex items-center gap-2 px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-black/70 border border-black/70 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition-colors"
           >
             Sort by {sortBy === "createdAt" ? "Date" : "Type"}
           </button>
 
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-            className="p-2 bg-black/20 border border-white/10 rounded-lg text-gray-300 hover:bg-white/5 transition-colors"
+            className="p-2 bg-black/20 border border-black/70 rounded-lg text-gray-300 hover:bg-white/5 transition-colors"
           >
             {sortOrder === "asc" ? (
               <SortAsc size={18} />

@@ -8,6 +8,7 @@ import {
   googleAuthCallback,
   setupTwoFactorAuth,
   verifyTwoFactorCode,
+  getUserProfile,
 } from "../controllers/auth.controller.js";
 import { auth } from "../middlewares/auth.js";
 
@@ -44,6 +45,9 @@ router.post("/2fa/setup", auth, setupTwoFactorAuth);
 
 // User 2FA verification route
 router.post("/2fa/verify", auth, verifyTwoFactorCode);
+
+// Get User Profile
+router.get("/me", auth, getUserProfile);
 
 // User 2FA reset route
 

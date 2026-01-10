@@ -1,9 +1,9 @@
 export function santizeUserDataForDashboard(user) {
-  const { passwordHash, twoFactorSecret, digitalAssets, ...safeUser } = user;
+  const { passwordHash, twoFactorSecret, assets, ...safeUser } = user;
 
   return {
     ...safeUser,
-    digitalAssetCount: digitalAssets?.length || 0,
+    digitalAssetCount: assets?.length || 0,
 
     heirs:
       user.heirs?.map(({ id, name, relationship, contactInfo, status }) => ({

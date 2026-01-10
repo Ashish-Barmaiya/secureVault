@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   ShieldCheck,
   Plus,
+  Clock,
 } from "lucide-react";
 import AssetList from "@/components/dashboard/AssetList";
 import AddAssetModal from "@/components/dashboard/AddAssetModal";
@@ -23,6 +24,33 @@ export default function VaultDashboard() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // To trigger list refresh
+  const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 minutes in seconds
+  const [selectedAsset, setSelectedAsset] = useState(null);
+
+  // Auto-lock timer
+  useEffect(() => {
+    if (!vaultKey) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          dispatch(clearVaultKey());
+          router.replace("/dashboard");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [vaultKey, dispatch, router]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   // Render page only if vaultKey is available
   useEffect(() => {
@@ -58,6 +86,10 @@ export default function VaultDashboard() {
                 <Vault size={22} className="text-white" />
               </div>
               <h1 className="text-xl sm:text-2xl font-bold">SecureVault</h1>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-blue-900/30 border border-blue-500/30 rounded-full text-blue-200 text-sm ml-4">
+                <Clock size={14} />
+                <span>Auto-lock in {formatTime(timeLeft)}</span>
+              </div>
             </div>
           </div>
 
@@ -135,17 +167,27 @@ export default function VaultDashboard() {
           <AssetList
             key={refreshTrigger}
             vaultKey={vaultKey}
-            onAddAsset={() => setIsAddModalOpen(true)}
-            onEditAsset={(asset) => console.log("Edit asset:", asset)} // TODO: Implement Edit
+            onAddAsset={() => {
+              setSelectedAsset(null);
+              setIsAddModalOpen(true);
+            }}
+            onEditAsset={(asset) => {
+              setSelectedAsset(asset);
+              setIsAddModalOpen(true);
+            }}
           />
         </section>
       </div>
 
       <AddAssetModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setSelectedAsset(null);
+        }}
         vaultKey={vaultKey}
         onAssetAdded={handleAssetAdded}
+        initialAsset={selectedAsset}
       />
 
       {/* Footer */}

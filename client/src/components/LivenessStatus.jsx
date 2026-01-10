@@ -144,17 +144,12 @@ export default function LivenessStatus() {
               <h4 className="text-sm font-semibold text-amber-300 mb-1">
                 Liveness Check Missed
               </h4>
-              <p className="text-xs text-amber-200/80 mb-3">
+              <p className="text-xs text-amber-200/80">
                 You've missed {missedIntervals} check-in
                 {missedIntervals > 1 ? "s" : ""}. After 3 missed intervals, your
-                vault enters Grace Period.
+                vault enters Grace Period. Unlock your vault below to submit
+                proof of life.
               </p>
-              <button
-                onClick={() => window.location.reload()}
-                className="px-3 py-1.5 bg-amber-500 text-amber-950 rounded-lg text-xs font-semibold hover:bg-amber-400 transition"
-              >
-                Unlock Vault to Submit Proof
-              </button>
             </div>
           </div>
         </div>
@@ -175,19 +170,16 @@ export default function LivenessStatus() {
                 to claim access.
               </p>
               {liveness.graceStartedAt && (
-                <p className="text-xs text-red-300 mb-3">
+                <p className="text-xs text-red-300">
                   Grace started:{" "}
                   {new Date(liveness.graceStartedAt).toLocaleDateString(
                     "en-US"
                   )}
                 </p>
               )}
-              <button
-                onClick={() => window.location.reload()}
-                className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-semibold hover:bg-red-400 transition"
-              >
-                Unlock Vault Now to Cancel Inheritance
-              </button>
+              <p className="text-xs text-red-300 mt-2 font-medium">
+                Unlock your vault below to cancel inheritance.
+              </p>
             </div>
           </div>
         </div>
@@ -204,7 +196,7 @@ export default function LivenessStatus() {
               </h4>
               <p className="text-xs text-red-200/80">
                 Your designated heirs can now claim access to your vault. Unlock
-                your vault to regain full control.
+                your vault below to regain full control.
               </p>
             </div>
           </div>

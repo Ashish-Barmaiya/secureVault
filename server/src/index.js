@@ -55,6 +55,7 @@ import assetRouter from "./routes/asset.router.js";
 import heirAuthRouter from "./routes/heir.auth.router.js";
 import userRouter from "./routes/user.router.js";
 import heirRouter from "./routes/heir.router.js";
+import heirVaultRouter from "./routes/heir.vault.router.js";
 import auditRouter from "./routes/audit.router.js";
 
 // Use routes
@@ -65,9 +66,8 @@ app.use("/dashboard/vault/asset", assetRouter);
 app.use("/heir/auth", heirAuthRouter);
 app.use("/user", userRouter);
 app.use("/heir", heirRouter);
-app.use("/audit", auditRouter);
-import heirVaultRouter from "./routes/heir.vault.router.js";
 app.use("/heir/vault", heirVaultRouter);
+app.use("/audit", auditRouter);
 
 // Initialize CRON jobs (Dead Man's Switch)
 import "./cron.js";

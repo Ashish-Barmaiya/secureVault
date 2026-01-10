@@ -249,10 +249,11 @@ const getLivenessStatus = async (req, res) => {
 
     // Calculate next check-in date
     let nextCheckDate = null;
-    if (vault.lastSuccessfulUnlockAt) {
+    const baseDate = vault.lastSuccessfulUnlockAt || vault.createdAt;
+
+    if (baseDate) {
       nextCheckDate = new Date(
-        vault.lastSuccessfulUnlockAt.getTime() +
-          user.inactivityPeriod * 24 * 60 * 60 * 1000
+        baseDate.getTime() + user.inactivityPeriod * 24 * 60 * 60 * 1000
       );
     }
 

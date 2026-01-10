@@ -181,12 +181,14 @@ passport.use(
         // 1. Find by googleId
         let existingUser = await prisma.user.findFirst({
           where: { googleId: profile.id },
+          include: { assets: { select: { id: true } } },
         });
 
         // 2. If not found, check by email
         if (!existingUser) {
           const userByEmail = await prisma.user.findFirst({
             where: { email },
+            include: { assets: { select: { id: true } } },
           });
 
           if (userByEmail) {
@@ -223,6 +225,7 @@ passport.deserializeUser(async (id, done) => {
   // Find user by ID in the database
   const user = await prisma.user.findUnique({
     where: { id },
+    include: { assets: { select: { id: true } } },
   });
   done(null, user);
 });
@@ -292,6 +295,7 @@ const userLogin = async (req, res) => {
     // Check if user exists
     const user = await prisma.user.findUnique({
       where: { email },
+      include: { assets: { select: { id: true } } },
     });
     if (!user) {
       return res
@@ -514,6 +518,33 @@ const verifyTwoFactorCode = async (req, res) => {
   }
 };
 
+// GET USER PROFILE
+const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { assets: { select: { id: true } } },
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const safeUser = santizeUserDataForDashboard(user);
+    return res.status(200).json({ success: true, user: safeUser });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching user profile",
+      error: error.message,
+    });
+  }
+};
+
 export {
   initializeUserSignUp,
   verifyOtpAndCreateNewUser,
@@ -523,4 +554,5 @@ export {
   googleAuthCallback,
   setupTwoFactorAuth,
   verifyTwoFactorCode,
+  getUserProfile,
 };

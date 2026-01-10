@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Save, Lock, Plus, Trash2 } from "lucide-react";
-import { encryptAssetData } from "../../utils/vaultCrypto";
+import { encryptAssetData, decryptAssetData } from "../../utils/vaultCrypto";
 import { authFetch } from "../../utils/authFetch";
 
 const ASSET_TYPES = [
@@ -16,12 +16,61 @@ const ASSET_TYPES = [
   { id: "IMPORTANT_NOTE", label: "Important Note" },
 ];
 
-const AddAssetModal = ({ isOpen, onClose, vaultKey, onAssetAdded }) => {
+const AddAssetModal = ({
+  isOpen,
+  onClose,
+  vaultKey,
+  onAssetAdded,
+  initialAsset = null,
+}) => {
   const [type, setType] = useState("SECRET_NOTE");
   const [title, setTitle] = useState("");
   const [fields, setFields] = useState([{ key: "", value: "" }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Populate form on open if initialAsset is provided
+  React.useEffect(() => {
+    if (isOpen && initialAsset && vaultKey) {
+      const loadAsset = async () => {
+        try {
+          setLoading(true);
+          const decrypted = await decryptAssetData(
+            initialAsset.encryptedPayload,
+            vaultKey
+          );
+          if (decrypted) {
+            const data = JSON.parse(decrypted);
+            setTitle(data.title || "");
+            setType(initialAsset.type);
+
+            // Convert object back to fields array
+            const newFields = Object.entries(data)
+              .filter(([key]) => key !== "title")
+              .map(([key, value]) => ({ key, value }));
+
+            if (newFields.length === 0) {
+              setFields([{ key: "", value: "" }]);
+            } else {
+              setFields(newFields);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to decrypt asset for editing:", err);
+          setError("Failed to decrypt asset data");
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadAsset();
+    } else if (isOpen && !initialAsset) {
+      // Reset form for new asset
+      setTitle("");
+      setType("SECRET_NOTE");
+      setFields([{ key: "", value: "" }]);
+      setError(null);
+    }
+  }, [isOpen, initialAsset, vaultKey]);
 
   const handleAddField = () => {
     setFields([...fields, { key: "", value: "" }]);
@@ -59,8 +108,14 @@ const AddAssetModal = ({ isOpen, onClose, vaultKey, onAssetAdded }) => {
       const encryptedPayload = `${encryptedObj.ciphertext}:${encryptedObj.iv}`;
 
       // 3. Submit
-      const res = await authFetch(`/api/dashboard/vault/asset`, {
-        method: "POST",
+      // 3. Submit
+      const url = initialAsset
+        ? `/api/dashboard/vault/asset/${initialAsset.id}`
+        : `/api/dashboard/vault/asset`;
+      const method = initialAsset ? "PUT" : "POST";
+
+      const res = await authFetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type,
@@ -101,7 +156,7 @@ const AddAssetModal = ({ isOpen, onClose, vaultKey, onAssetAdded }) => {
         <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Lock size={20} className="text-purple-500" />
-            Add New Asset
+            {initialAsset ? "Edit Asset" : "Add New Asset"}
           </h2>
           <button
             onClick={onClose}
@@ -128,7 +183,7 @@ const AddAssetModal = ({ isOpen, onClose, vaultKey, onAssetAdded }) => {
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+              className="w-full bg-black/80 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
             >
               {ASSET_TYPES.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -155,7 +210,7 @@ const AddAssetModal = ({ isOpen, onClose, vaultKey, onAssetAdded }) => {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="block text-sm font-medium text-gray-400">
-                Secret Fields
+                Secret Fields (Encrypted)
               </label>
               <button
                 type="button"

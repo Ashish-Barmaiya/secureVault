@@ -25,7 +25,7 @@ model User {
   lastLogin        DateTime @default(now())
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  inactivityPeriod Int      @default(180)
+  inactivityPeriod Int      @default(30)
 
   // Relations
   vault              Vault?
